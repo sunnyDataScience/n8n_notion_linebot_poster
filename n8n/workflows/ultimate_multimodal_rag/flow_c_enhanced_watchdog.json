@@ -1,0 +1,916 @@
+{
+  "name": "[Ultimate] Flow C — Enhanced Watchdog (Error + Reindex + Quality + Media Retry)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "a1b2c3d4-0001-4a00-b000-000000000001",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [250, 0]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "set-err-1",
+              "name": "workflowName",
+              "value": "={{ $json.workflow.name }}",
+              "type": "string"
+            },
+            {
+              "id": "set-err-2",
+              "name": "errorMessage",
+              "value": "={{ $json.execution.error.message }}",
+              "type": "string"
+            },
+            {
+              "id": "set-err-3",
+              "name": "errorNode",
+              "value": "={{ $json.execution.error.node?.name ?? 'Unknown' }}",
+              "type": "string"
+            },
+            {
+              "id": "set-err-4",
+              "name": "timestamp",
+              "value": "={{ new Date().toISOString() }}",
+              "type": "string"
+            },
+            {
+              "id": "set-err-5",
+              "name": "executionId",
+              "value": "={{ $json.execution.id }}",
+              "type": "string"
+            },
+            {
+              "id": "set-err-6",
+              "name": "executionUrl",
+              "value": "={{ $json.execution.url }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0002-4a00-b000-000000000002",
+      "name": "Set — Extract Error Info",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [500, 0]
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "create",
+        "databaseId": "YOUR_NOTION_ERROR_LOG_DB_ID",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "workflow_name",
+              "title": "={{ $json.workflowName }}"
+            },
+            {
+              "key": "error_message",
+              "richTextValue": "={{ $json.errorMessage }}"
+            },
+            {
+              "key": "error_node",
+              "richTextValue": "={{ $json.errorNode }}"
+            },
+            {
+              "key": "timestamp",
+              "dateValue": "={{ $json.timestamp }}"
+            },
+            {
+              "key": "execution_id",
+              "richTextValue": "={{ $json.executionId }}"
+            },
+            {
+              "key": "status",
+              "selectValue": "UNRESOLVED"
+            },
+            {
+              "key": "media_type",
+              "richTextValue": "={{ $json.mediaType ?? '' }}"
+            }
+          ]
+        }
+      },
+      "id": "a1b2c3d4-0003-4a00-b000-000000000003",
+      "name": "Notion — Write Error Log",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [750, 0],
+      "credentials": {
+        "notionApi": {
+          "id": "notion_api",
+          "name": "notion_api"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/push",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"to\": \"ADMIN_LINE_USER_ID\",\n  \"messages\": [\n    {\n      \"type\": \"text\",\n      \"text\": \"⚠️ 工作流錯誤\\n\\n流程：{{ $json.workflowName }}\\n節點：{{ $json.errorNode }}\\n錯誤：{{ $json.errorMessage }}\\n時間：{{ $json.timestamp }}\\n\\n請至 n8n 檢查執行紀錄\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0004-4a00-b000-000000000004",
+      "name": "HTTP Request — LINE Notify Admin",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1000, 0],
+      "notes": "POST LINE Push API — Bearer LINE_CHANNEL_ACCESS_TOKEN"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 0 * * *"
+            }
+          ]
+        },
+        "options": {
+          "timezone": "Asia/Taipei"
+        }
+      },
+      "id": "a1b2c3d4-0005-4a00-b000-000000000005",
+      "name": "Schedule Trigger — Nightly",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": "YOUR_NOTION_INDEX_LOG_DB_ID",
+        "returnAll": true,
+        "filterType": "manual",
+        "filters": {
+          "conditions": [
+            {
+              "key": "status",
+              "condition": "equals",
+              "value": "NEW"
+            },
+            {
+              "key": "status",
+              "condition": "equals",
+              "value": "FAILED"
+            }
+          ],
+          "combinator": "or"
+        }
+      },
+      "id": "a1b2c3d4-0006-4a00-b000-000000000006",
+      "name": "Notion — Query Pending Items",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [500, 300],
+      "credentials": {
+        "notionApi": {
+          "id": "notion_api",
+          "name": "notion_api"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "if-pending-1",
+              "leftValue": "={{ $input.all().length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0007-4a00-b000-000000000007",
+      "name": "IF — Has Pending Items",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [750, 300]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "a1b2c3d4-0008-4a00-b000-000000000008",
+      "name": "Split In Batches",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [1000, 300]
+    },
+    {
+      "parameters": {
+        "workflowId": "FLOW_A_WORKFLOW_ID",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0009-4a00-b000-000000000009",
+      "name": "Execute Workflow — Trigger Flow A",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [1250, 300]
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "update",
+        "pageId": "={{ $json.id }}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "status",
+              "selectValue": "REINDEXED"
+            },
+            {
+              "key": "reindexed_at",
+              "dateValue": "={{ new Date().toISOString() }}"
+            }
+          ]
+        }
+      },
+      "id": "a1b2c3d4-0010-4a00-b000-000000000010",
+      "name": "Notion — Update Status",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [1500, 300],
+      "credentials": {
+        "notionApi": {
+          "id": "notion_api",
+          "name": "notion_api"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "no-pending-1",
+              "name": "message",
+              "value": "No pending items found",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0011-4a00-b000-000000000011",
+      "name": "Set — No Pending",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1000, 450]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 10 * * 0"
+            }
+          ]
+        },
+        "options": {
+          "timezone": "Asia/Taipei"
+        }
+      },
+      "id": "a1b2c3d4-0012-4a00-b000-000000000012",
+      "name": "Schedule Trigger — Weekly",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [250, 600]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      query: \"去年迎新場地在哪裡租的？\",\n      expectedKeywords: [\"場地\", \"迎新\"]\n    }\n  },\n  {\n    json: {\n      query: \"社費收支報告\",\n      expectedKeywords: [\"社費\", \"收支\"]\n    }\n  },\n  {\n    json: {\n      query: \"幹部交接清單\",\n      expectedKeywords: [\"交接\", \"幹部\"]\n    }\n  }\n];"
+      },
+      "id": "a1b2c3d4-0013-4a00-b000-000000000013",
+      "name": "Code — Generate Test Queries",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [500, 600]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "a1b2c3d4-0014-4a00-b000-000000000014",
+      "name": "Split In Batches — Test Queries",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [750, 600]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://YOUR_PINECONE_INDEX.svc.pinecone.io/query",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Api-Key",
+              "value": "YOUR_PINECONE_API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"vector\": [],\n  \"topK\": 3,\n  \"includeMetadata\": true,\n  \"namespace\": \"default\"\n}",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0015-4a00-b000-000000000015",
+      "name": "HTTP Request — Query Pinecone",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1000, 600],
+      "notes": "Placeholder: In practice, embed the query text first before sending to Pinecone"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "if-results-1",
+              "leftValue": "={{ $json.matches?.filter(m => m.score > 0.7).length ?? 0 }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0016-4a00-b000-000000000016",
+      "name": "IF — Has Results",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1250, 600]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "qpass-1",
+              "name": "testQuery",
+              "value": "={{ $('Split In Batches — Test Queries').item.json.query }}",
+              "type": "string"
+            },
+            {
+              "id": "qpass-2",
+              "name": "result",
+              "value": "PASS",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0017-4a00-b000-000000000017",
+      "name": "Set — Quality Pass",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1500, 550]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "qfail-1",
+              "name": "testQuery",
+              "value": "={{ $('Split In Batches — Test Queries').item.json.query }}",
+              "type": "string"
+            },
+            {
+              "id": "qfail-2",
+              "name": "result",
+              "value": "FAIL",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0018-4a00-b000-000000000018",
+      "name": "Set — Quality Fail",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1500, 700]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst passed = items.filter(i => i.json.result === 'PASS').length;\nconst failed = items.filter(i => i.json.result === 'FAIL');\nconst total = items.length;\n\nconst failList = failed.map(f => `- ${f.json.testQuery}`).join('\\n');\n\nlet suggestion = '';\nif (failed.length > 0) {\n  suggestion = '\\n\\n建議：請重新執行索引流程以改善搜尋品質';\n}\n\nreturn [{\n  json: {\n    passed,\n    total,\n    failedQueries: failList,\n    report: `📊 每週品質報告\\n\\n通過：${passed}/${total}\\n失敗項目：\\n${failList || '(無)'}${suggestion}`\n  }\n}];"
+      },
+      "id": "a1b2c3d4-0019-4a00-b000-000000000019",
+      "name": "Code — Compile Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1750, 600]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/push",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"to\": \"ADMIN_LINE_USER_ID\",\n  \"messages\": [\n    {\n      \"type\": \"text\",\n      \"text\": \"{{ $json.report }}\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0020-4a00-b000-000000000020",
+      "name": "HTTP Request — LINE Quality Report",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2000, 600],
+      "notes": "Push weekly quality report to admin via LINE — Bearer LINE_CHANNEL_ACCESS_TOKEN"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 6 * * *"
+            }
+          ]
+        },
+        "options": {
+          "timezone": "Asia/Taipei"
+        }
+      },
+      "id": "a1b2c3d4-0021-4a00-b000-000000000021",
+      "name": "Schedule Trigger — Media Retry",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [250, 900]
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": "YOUR_NOTION_INDEX_LOG_DB_ID",
+        "returnAll": true,
+        "filterType": "manual",
+        "filters": {
+          "conditions": [
+            {
+              "key": "status",
+              "condition": "equals",
+              "value": "MEDIA_FAILED"
+            },
+            {
+              "key": "media_type",
+              "condition": "isNotEmpty"
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "a1b2c3d4-0022-4a00-b000-000000000022",
+      "name": "Notion — Query Failed Media",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [500, 900],
+      "credentials": {
+        "notionApi": {
+          "id": "notion_api",
+          "name": "notion_api"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "if-media-1",
+              "leftValue": "={{ $input.all().length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0023-4a00-b000-000000000023",
+      "name": "IF — Has Failed Media",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [750, 900]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "a1b2c3d4-0024-4a00-b000-000000000024",
+      "name": "Split In Batches — Retry",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [1000, 900]
+    },
+    {
+      "parameters": {
+        "workflowId": "FLOW_A_WORKFLOW_ID",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0025-4a00-b000-000000000025",
+      "name": "Execute Workflow — Retry Flow A",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [1250, 900]
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "update",
+        "pageId": "={{ $json.id }}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "status",
+              "selectValue": "RETRY_COMPLETE"
+            },
+            {
+              "key": "retry_count",
+              "numberValue": "={{ ($json.retry_count ?? 0) + 1 }}"
+            }
+          ]
+        }
+      },
+      "id": "a1b2c3d4-0026-4a00-b000-000000000026",
+      "name": "Notion — Update Retry Status",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [1500, 900],
+      "credentials": {
+        "notionApi": {
+          "id": "notion_api",
+          "name": "notion_api"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Flow C — Enhanced Watchdog（終極看門狗）\n\n此工作流整合 4 大監控功能於一身：\n\n### C-1: 即時錯誤監控\n任何工作流出錯立即通知管理員，並寫入 Notion 錯誤日誌\n\n### C-2: 每晚自動補索引（00:00）\n找出狀態為 NEW 或 FAILED 的文件，重新觸發 Flow A 處理\n\n### C-3: 每週品質抽驗（週日 10:00）\n用 3 組測試問句驗證 Pinecone 搜尋品質，產出報告推送至 LINE\n\n### C-4: 每日媒體重試（06:00）\n圖片/語音/影片處理失敗的項目自動重試 Flow A\n\n---\n**佔位符號請替換：**\n- YOUR_NOTION_ERROR_LOG_DB_ID\n- YOUR_NOTION_INDEX_LOG_DB_ID\n- LINE_CHANNEL_ACCESS_TOKEN\n- ADMIN_LINE_USER_ID\n- FLOW_A_WORKFLOW_ID\n- YOUR_PINECONE_INDEX",
+        "height": 480,
+        "width": 420
+      },
+      "id": "a1b2c3d4-0027-4a00-b000-000000000027",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [250, -200]
+    }
+  ],
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set — Extract Error Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set — Extract Error Info": {
+      "main": [
+        [
+          {
+            "node": "Notion — Write Error Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion — Write Error Log": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request — LINE Notify Admin",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger — Nightly": {
+      "main": [
+        [
+          {
+            "node": "Notion — Query Pending Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion — Query Pending Items": {
+      "main": [
+        [
+          {
+            "node": "IF — Has Pending Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF — Has Pending Items": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set — No Pending",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split In Batches": {
+      "main": [
+        [
+          {
+            "node": "Execute Workflow — Trigger Flow A",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Workflow — Trigger Flow A": {
+      "main": [
+        [
+          {
+            "node": "Notion — Update Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion — Update Status": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger — Weekly": {
+      "main": [
+        [
+          {
+            "node": "Code — Generate Test Queries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code — Generate Test Queries": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches — Test Queries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split In Batches — Test Queries": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request — Query Pinecone",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code — Compile Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request — Query Pinecone": {
+      "main": [
+        [
+          {
+            "node": "IF — Has Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF — Has Results": {
+      "main": [
+        [
+          {
+            "node": "Set — Quality Pass",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set — Quality Fail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set — Quality Pass": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches — Test Queries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set — Quality Fail": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches — Test Queries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code — Compile Report": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request — LINE Quality Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger — Media Retry": {
+      "main": [
+        [
+          {
+            "node": "Notion — Query Failed Media",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion — Query Failed Media": {
+      "main": [
+        [
+          {
+            "node": "IF — Has Failed Media",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF — Has Failed Media": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches — Retry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split In Batches — Retry": {
+      "main": [
+        [
+          {
+            "node": "Execute Workflow — Retry Flow A",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Workflow — Retry Flow A": {
+      "main": [
+        [
+          {
+            "node": "Notion — Update Retry Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion — Update Retry Status": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches — Retry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Taipei"
+  },
+  "versionId": "flow-c-enhanced-watchdog-v1",
+  "meta": {
+    "instanceId": "ultimate-multimodal-rag"
+  },
+  "tags": []
+}

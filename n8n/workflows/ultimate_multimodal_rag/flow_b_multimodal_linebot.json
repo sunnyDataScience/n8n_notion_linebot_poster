@@ -1,0 +1,1020 @@
+{
+  "name": "[Ultimate] Flow B — Multimodal LINE Bot",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "line-multimodal-webhook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "a1b2c3d4-1111-4aaa-b111-000000000001",
+      "name": "LINE Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "webhookId": "line-multimodal-webhook"
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "assign-replyToken",
+              "name": "replyToken",
+              "value": "={{ $json.body.events[0].replyToken }}",
+              "type": "string"
+            },
+            {
+              "id": "assign-messageType",
+              "name": "messageType",
+              "value": "={{ $json.body.events[0].message.type }}",
+              "type": "string"
+            },
+            {
+              "id": "assign-messageId",
+              "name": "messageId",
+              "value": "={{ $json.body.events[0].message.id }}",
+              "type": "string"
+            },
+            {
+              "id": "assign-messageText",
+              "name": "messageText",
+              "value": "={{ $json.body.events[0].message.text }}",
+              "type": "string"
+            },
+            {
+              "id": "assign-userId",
+              "name": "userId",
+              "value": "={{ $json.body.events[0].source.userId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-1111-4aaa-b111-000000000002",
+      "name": "Set — Extract Event",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "rules": [
+            {
+              "outputKey": "text",
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "cond-text",
+                    "leftValue": "={{ $json.messageType }}",
+                    "rightValue": "text",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true
+            },
+            {
+              "outputKey": "image",
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "cond-image",
+                    "leftValue": "={{ $json.messageType }}",
+                    "rightValue": "image",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true
+            },
+            {
+              "outputKey": "audio",
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "cond-audio",
+                    "leftValue": "={{ $json.messageType }}",
+                    "rightValue": "audio",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true
+            },
+            {
+              "outputKey": "video",
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "cond-video",
+                    "leftValue": "={{ $json.messageType }}",
+                    "rightValue": "video",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true
+            }
+          ],
+          "fallbackOutput": {
+            "outputKey": "other"
+          }
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-1111-4aaa-b111-000000000003",
+      "name": "Switch — Message Type",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [750, 300]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "assign-queryText-text",
+              "name": "queryText",
+              "value": "={{ $json.messageText }}",
+              "type": "string"
+            },
+            {
+              "id": "assign-querySource-text",
+              "name": "querySource",
+              "value": "text",
+              "type": "string"
+            },
+            {
+              "id": "assign-replyToken-text",
+              "name": "replyToken",
+              "value": "={{ $json.replyToken }}",
+              "type": "string"
+            },
+            {
+              "id": "assign-isUnsupported-text",
+              "name": "isUnsupported",
+              "value": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-1111-4aaa-b111-000000000004",
+      "name": "Set — Text Query",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1000, 0]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api-data.line.me/v2/bot/message/{{ $json.messageId }}/content",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer LINE_CHANNEL_ACCESS_TOKEN"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "a1b2c3d4-1111-4aaa-b111-000000000005",
+      "name": "HTTP Request — Download Image from LINE",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1000, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer OPENAI_API_KEY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"gpt-4o\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"Describe what you see in this image. If there's text, transcribe it. Be specific about objects, colors, and context. Reply in Traditional Chinese.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": [\n        {\n          \"type\": \"image_url\",\n          \"image_url\": {\n            \"url\": \"data:image/jpeg;base64,{{ $binary.data.data }}\"\n          }\n        }\n      ]\n    }\n  ],\n  \"max_tokens\": 1000\n}",
+        "options": {}
+      },
+      "id": "a1b2c3d4-1111-4aaa-b111-000000000006",
+      "name": "HTTP Request — OpenAI Vision",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1250, 200]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "assign-queryText-image",
+              "name": "queryText",
+              "value": "={{ $json.choices[0].message.content }}",
+              "type": "string"
+            },
+            {
+              "id": "assign-querySource-image",
+              "name": "querySource",
+              "value": "image",
+              "type": "string"
+            },
+            {
+              "id": "assign-replyToken-image",
+              "name": "replyToken",
+              "value": "={{ $('Set — Extract Event').item.json.replyToken }}",
+              "type": "string"
+            },
+            {
+              "id": "assign-isUnsupported-image",
+              "name": "isUnsupported",
+              "value": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-1111-4aaa-b111-000000000007",
+      "name": "Set — Image Query",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1500, 200]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api-data.line.me/v2/bot/message/{{ $json.messageId }}/content",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer LINE_CHANNEL_ACCESS_TOKEN"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "a1b2c3d4-1111-4aaa-b111-000000000008",
+      "name": "HTTP Request — Download Audio from LINE",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1000, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/audio/transcriptions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer OPENAI_API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            },
+            {
+              "parameterType": "formData",
+              "name": "model",
+              "value": "whisper-1"
+            },
+            {
+              "parameterType": "formData",
+              "name": "language",
+              "value": "zh"
+            },
+            {
+              "parameterType": "formData",
+              "name": "response_format",
+              "value": "text"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-1111-4aaa-b111-000000000009",
+      "name": "HTTP Request — OpenAI Whisper",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1250, 400]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "assign-queryText-audio",
+              "name": "queryText",
+              "value": "={{ $json.data }}",
+              "type": "string"
+            },
+            {
+              "id": "assign-querySource-audio",
+              "name": "querySource",
+              "value": "audio",
+              "type": "string"
+            },
+            {
+              "id": "assign-replyToken-audio",
+              "name": "replyToken",
+              "value": "={{ $('Set — Extract Event').item.json.replyToken }}",
+              "type": "string"
+            },
+            {
+              "id": "assign-isUnsupported-audio",
+              "name": "isUnsupported",
+              "value": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-1111-4aaa-b111-000000000010",
+      "name": "Set — Audio Query",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1500, 400]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api-data.line.me/v2/bot/message/{{ $json.messageId }}/content",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer LINE_CHANNEL_ACCESS_TOKEN"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "a1b2c3d4-1111-4aaa-b111-000000000011",
+      "name": "HTTP Request — Download Video from LINE",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1000, 600]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/audio/transcriptions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer OPENAI_API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            },
+            {
+              "parameterType": "formData",
+              "name": "model",
+              "value": "whisper-1"
+            },
+            {
+              "parameterType": "formData",
+              "name": "language",
+              "value": "zh"
+            },
+            {
+              "parameterType": "formData",
+              "name": "response_format",
+              "value": "text"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-1111-4aaa-b111-000000000012",
+      "name": "HTTP Request — Whisper Video",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1250, 600]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "assign-queryText-video",
+              "name": "queryText",
+              "value": "={{ $json.data }}",
+              "type": "string"
+            },
+            {
+              "id": "assign-querySource-video",
+              "name": "querySource",
+              "value": "video",
+              "type": "string"
+            },
+            {
+              "id": "assign-replyToken-video",
+              "name": "replyToken",
+              "value": "={{ $('Set — Extract Event').item.json.replyToken }}",
+              "type": "string"
+            },
+            {
+              "id": "assign-isUnsupported-video",
+              "name": "isUnsupported",
+              "value": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-1111-4aaa-b111-000000000013",
+      "name": "Set — Video Query",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1500, 600]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "assign-queryText-unsupported",
+              "name": "queryText",
+              "value": "使用者傳送了不支援的訊息類型",
+              "type": "string"
+            },
+            {
+              "id": "assign-querySource-unsupported",
+              "name": "querySource",
+              "value": "unsupported",
+              "type": "string"
+            },
+            {
+              "id": "assign-isUnsupported",
+              "name": "isUnsupported",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "assign-replyToken-unsupported",
+              "name": "replyToken",
+              "value": "={{ $json.replyToken }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-1111-4aaa-b111-000000000014",
+      "name": "Set — Unsupported",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1000, 800]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond-isUnsupported",
+              "leftValue": "={{ $json.isUnsupported }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-1111-4aaa-b111-000000000015",
+      "name": "IF — Check Unsupported",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1750, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/reply",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer LINE_CHANNEL_ACCESS_TOKEN"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"replyToken\": \"{{ $json.replyToken }}\",\n  \"messages\": [\n    {\n      \"type\": \"text\",\n      \"text\": \"抱歉，目前支援文字、圖片、語音和影片訊息。請試試其他方式提問！\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "a1b2c3d4-1111-4aaa-b111-000000000016",
+      "name": "Unsupported Reply",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2000, 800]
+    },
+    {
+      "parameters": {
+        "model": "text-embedding-3-small",
+        "options": {}
+      },
+      "id": "a1b2c3d4-1111-4aaa-b111-000000000017",
+      "name": "Embeddings OpenAI",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.1,
+      "position": [2000, 300],
+      "credentials": {
+        "openAiApi": {
+          "id": "openai_api",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve",
+        "pineconeIndex": "YOUR_PINECONE_INDEX",
+        "pineconeNamespace": "multimodal-rag",
+        "topK": 5,
+        "options": {}
+      },
+      "id": "a1b2c3d4-1111-4aaa-b111-000000000018",
+      "name": "Pinecone Query",
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1,
+      "position": [2250, 300],
+      "credentials": {
+        "pineconeApi": {
+          "id": "pinecone_api",
+          "name": "Pinecone API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are a multimodal knowledge base assistant. The user may have asked via text, sent an image, voice message, or video. The querySource field tells you how they asked. Answer based ONLY on the provided context from the knowledge base. Include source links when available. If the context doesn't contain relevant information, say so honestly. Always reply in Traditional Chinese. Format your response clearly and concisely for LINE messaging (keep under 2000 characters)."
+            },
+            {
+              "role": "user",
+              "content": "=Query source: {{ $json.querySource }}\nUser query: {{ $json.queryText }}\n\nRetrieved context:\n{{ $json.retrievedDocuments }}"
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.3
+        }
+      },
+      "id": "a1b2c3d4-1111-4aaa-b111-000000000019",
+      "name": "OpenAI Chat — Generate Answer",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [2500, 300],
+      "credentials": {
+        "openAiApi": {
+          "id": "openai_api",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/reply",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer LINE_CHANNEL_ACCESS_TOKEN"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"replyToken\": \"{{ $json.replyToken }}\",\n  \"messages\": [\n    {\n      \"type\": \"text\",\n      \"text\": \"{{ $json.aiAnswer }}\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "a1b2c3d4-1111-4aaa-b111-000000000020",
+      "name": "HTTP Request — LINE Reply",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2750, 300]
+    },
+    {
+      "parameters": {
+        "content": "## Multimodal LINE Bot + RAG Pipeline\n\n### 架構說明\n此工作流程實現了一個多模態 LINE Bot，能夠接收並處理以下訊息類型：\n\n1. **文字訊息** — 直接作為查詢文字送入 RAG pipeline\n2. **圖片訊息** — 透過 LINE Content API 下載圖片，使用 OpenAI GPT-4o Vision 進行圖片描述，將描述文字作為查詢\n3. **語音訊息** — 透過 LINE Content API 下載音檔，使用 OpenAI Whisper 進行語音轉文字，將轉錄文字作為查詢\n4. **影片訊息** — 透過 LINE Content API 下載影片，提取音軌後使用 Whisper 轉錄，將轉錄文字作為查詢\n5. **其他類型** — 回覆不支援訊息提示\n\n### RAG Pipeline\n- 使用 OpenAI text-embedding-3-small 將查詢文字向量化\n- 在 Pinecone 向量資料庫中進行相似度搜尋（Top-5）\n- 將檢索到的文件與原始查詢一起送入 GPT-4o 生成回答\n- 透過 LINE Reply API 將回答傳回給使用者\n\n### 設定須知\n- 替換 LINE_CHANNEL_ACCESS_TOKEN 為你的 LINE Channel Access Token\n- 替換 OPENAI_API_KEY 為你的 OpenAI API Key\n- 替換 YOUR_PINECONE_INDEX 為你的 Pinecone Index 名稱\n- 設定對應的 n8n credentials（openai_api, pinecone_api）",
+        "height": 520,
+        "width": 480
+      },
+      "id": "a1b2c3d4-1111-4aaa-b111-000000000021",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [250, -100]
+    }
+  ],
+  "connections": {
+    "LINE Webhook": {
+      "main": [
+        [
+          {
+            "node": "Set — Extract Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set — Extract Event": {
+      "main": [
+        [
+          {
+            "node": "Switch — Message Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch — Message Type": {
+      "main": [
+        [
+          {
+            "node": "Set — Text Query",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request — Download Image from LINE",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request — Download Audio from LINE",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request — Download Video from LINE",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set — Unsupported",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set — Text Query": {
+      "main": [
+        [
+          {
+            "node": "IF — Check Unsupported",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request — Download Image from LINE": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request — OpenAI Vision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request — OpenAI Vision": {
+      "main": [
+        [
+          {
+            "node": "Set — Image Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set — Image Query": {
+      "main": [
+        [
+          {
+            "node": "IF — Check Unsupported",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request — Download Audio from LINE": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request — OpenAI Whisper",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request — OpenAI Whisper": {
+      "main": [
+        [
+          {
+            "node": "Set — Audio Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set — Audio Query": {
+      "main": [
+        [
+          {
+            "node": "IF — Check Unsupported",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request — Download Video from LINE": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request — Whisper Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request — Whisper Video": {
+      "main": [
+        [
+          {
+            "node": "Set — Video Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set — Video Query": {
+      "main": [
+        [
+          {
+            "node": "IF — Check Unsupported",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set — Unsupported": {
+      "main": [
+        [
+          {
+            "node": "IF — Check Unsupported",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF — Check Unsupported": {
+      "main": [
+        [
+          {
+            "node": "Unsupported Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Embeddings OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "main": [
+        [
+          {
+            "node": "Pinecone Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Query": {
+      "main": [
+        [
+          {
+            "node": "OpenAI Chat — Generate Answer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat — Generate Answer": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request — LINE Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Taipei",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "b2f3c4d5-2222-4bbb-c222-000000000001",
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": "multimodal-linebot-rag-ultimate"
+  },
+  "id": "flow-b-multimodal-linebot",
+  "tags": [
+    {
+      "id": "tag-ultimate-rag",
+      "name": "ultimate-multimodal-rag",
+      "createdAt": "2025-01-01T00:00:00.000Z",
+      "updatedAt": "2025-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "tag-linebot",
+      "name": "line-bot",
+      "createdAt": "2025-01-01T00:00:00.000Z",
+      "updatedAt": "2025-01-01T00:00:00.000Z"
+    }
+  ]
+}

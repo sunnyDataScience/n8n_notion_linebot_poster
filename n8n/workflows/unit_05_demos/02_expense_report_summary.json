@@ -1,0 +1,298 @@
+{
+  "name": "[Unit 5 Demo] Expense Report & Monthly Summary",
+  "nodes": [
+    {
+      "parameters": {
+        "event": "pageAddedToDatabase",
+        "databaseId": "YOUR_NOTION_EXPENSE_DB_ID",
+        "simple": true
+      },
+      "id": "a1b2c3d4-0001-4000-8000-000000000001",
+      "name": "Notion Trigger - Expense Submitted",
+      "type": "n8n-nodes-base.notionTrigger",
+      "typeVersion": 1,
+      "position": [240, 0],
+      "credentials": {
+        "notionApi": {
+          "id": "notion_api",
+          "name": "Notion API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "item_name",
+              "value": "={{ $json.properties['Name']?.title?.[0]?.plain_text ?? $json.properties['品項']?.title?.[0]?.plain_text ?? '' }}"
+            },
+            {
+              "name": "category",
+              "value": "={{ $json.properties['Category']?.select?.name ?? $json.properties['類別']?.select?.name ?? '' }}"
+            },
+            {
+              "name": "date",
+              "value": "={{ $json.properties['Date']?.date?.start ?? $json.properties['日期']?.date?.start ?? '' }}"
+            },
+            {
+              "name": "submitted_by",
+              "value": "={{ $json.properties['Submitted By']?.rich_text?.[0]?.plain_text ?? $json.properties['提交人']?.rich_text?.[0]?.plain_text ?? '' }}"
+            }
+          ],
+          "number": [
+            {
+              "name": "amount",
+              "value": "={{ $json.properties['Amount']?.number ?? $json.properties['金額']?.number ?? 0 }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0001-4000-8000-000000000002",
+      "name": "Set - Normalize Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [480, 0]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_GOOGLE_SHEET_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "Sheet1"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "item_name": "={{ $json.item_name }}",
+            "amount": "={{ $json.amount }}",
+            "category": "={{ $json.category }}",
+            "date": "={{ $json.date }}",
+            "submitted_by": "={{ $json.submitted_by }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0001-4000-8000-000000000003",
+      "name": "Google Sheets - Append Expense",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [720, 0],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "google_sheets_oauth2",
+          "name": "Google Sheets OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtMonth": 1,
+              "triggerAtDayOfMonth": 1,
+              "triggerAtHour": 9,
+              "triggerAtMinute": 0
+            }
+          ]
+        },
+        "options": {
+          "timezone": "Asia/Taipei"
+        }
+      },
+      "id": "a1b2c3d4-0001-4000-8000-000000000004",
+      "name": "Schedule Trigger - Monthly 1st",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 350]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_GOOGLE_SHEET_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "Sheet1"
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0001-4000-8000-000000000005",
+      "name": "Google Sheets - Read Expenses",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [480, 350],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "google_sheets_oauth2",
+          "name": "Google Sheets OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get previous month (since this runs on 1st of current month)\nconst now = new Date();\nconst targetYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();\nconst targetMonth = now.getMonth() === 0 ? 12 : now.getMonth(); // 1-based\nconst targetPrefix = `${targetYear}-${String(targetMonth).padStart(2, '0')}`;\n\n// Filter rows for the target month\nconst rows = $input.all().filter(item => {\n  const date = item.json.date || '';\n  return date.startsWith(targetPrefix);\n});\n\n// Group by category and sum amounts\nconst summary = {};\nlet grandTotal = 0;\n\nfor (const row of rows) {\n  const category = row.json.category || 'Uncategorized';\n  const amount = parseFloat(row.json.amount) || 0;\n  if (!summary[category]) {\n    summary[category] = 0;\n  }\n  summary[category] += amount;\n  grandTotal += amount;\n}\n\n// Format summary text\nconst monthLabel = `${targetYear}/${String(targetMonth).padStart(2, '0')}`;\nlet text = `${monthLabel} Monthly Expense Summary\\n${'='.repeat(30)}\\n`;\n\nconst sorted = Object.entries(summary).sort((a, b) => b[1] - a[1]);\nfor (const [cat, total] of sorted) {\n  text += `${cat}: NT$${total.toLocaleString()}\\n`;\n}\ntext += `${'='.repeat(30)}\\nTotal: NT$${grandTotal.toLocaleString()}`;\n\nreturn [{\n  json: {\n    month: monthLabel,\n    summary_text: text,\n    category_breakdown: summary,\n    grand_total: grandTotal,\n    row_count: rows.length\n  }\n}];"
+      },
+      "id": "a1b2c3d4-0001-4000-8000-000000000006",
+      "name": "Code - Summarize by Category",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [720, 350]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "line_message",
+              "value": "={{ $json.summary_text }}"
+            },
+            {
+              "name": "line_user_id",
+              "value": "FINANCE_MANAGER_LINE_USER_ID"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0001-4000-8000-000000000007",
+      "name": "Set - Format LINE Message",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [960, 350]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/push",
+        "authentication": "genericCredentialType",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer LINE_CHANNEL_ACCESS_TOKEN"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"to\": \"{{ $json.line_user_id }}\",\n  \"messages\": [\n    {\n      \"type\": \"text\",\n      \"text\": {{ JSON.stringify($json.line_message) }}\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0001-4000-8000-000000000008",
+      "name": "HTTP Request - LINE Push Summary",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1200, 350]
+    },
+    {
+      "parameters": {
+        "content": "### [Demo] Expense Report & Monthly Summary\n\n**Part 1 (top):** Notion expense form submitted -> normalize fields -> append to Google Sheets ledger (real-time)\n\n**Part 2 (bottom):** Monthly schedule (1st @ 09:00) -> read Google Sheets -> summarize by category -> LINE push monthly report to finance manager\n\n---\n\n【Demo】財會表單串接：(上) Notion 費用表單 → 即時寫入 Google Sheets 帳本 (下) 每月1號自動匯總當月支出 → LINE 推播月報給財務負責人。共用元件：Notion Trigger、Set 格式化、Cron 排程、LINE 推播",
+        "height": 280,
+        "width": 400
+      },
+      "id": "a1b2c3d4-0001-4000-8000-000000000009",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-160, -60]
+    }
+  ],
+  "connections": {
+    "Notion Trigger - Expense Submitted": {
+      "main": [
+        [
+          {
+            "node": "Set - Normalize Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set - Normalize Fields": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets - Append Expense",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger - Monthly 1st": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets - Read Expenses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets - Read Expenses": {
+      "main": [
+        [
+          {
+            "node": "Code - Summarize by Category",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Summarize by Category": {
+      "main": [
+        [
+          {
+            "node": "Set - Format LINE Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set - Format LINE Message": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request - LINE Push Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Taipei"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 2,
+  "active": false,
+  "versionId": "unit05-demo02-expense-v1",
+  "meta": {
+    "instanceId": "placeholder"
+  }
+}

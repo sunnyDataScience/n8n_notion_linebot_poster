@@ -1,0 +1,211 @@
+{
+  "name": "[Unit 3] Flow A-1 — Drive Indexing Path",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_DRIVE_FOLDER_ID",
+          "mode": "id"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "id": "a1b2c3d4-0001-4000-a000-000000000001",
+      "name": "Drive Trigger — New File",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "PLACEHOLDER",
+          "name": "google_drive_oauth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        500,
+        300
+      ],
+      "id": "a1b2c3d4-0002-4000-a000-000000000002",
+      "name": "Download File",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "PLACEHOLDER",
+          "name": "google_drive_oauth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        750,
+        300
+      ],
+      "id": "a1b2c3d4-0003-4000-a000-000000000003",
+      "name": "Extract Text from File"
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "field-doc_id",
+              "name": "doc_id",
+              "value": "={{ $('Drive Trigger — New File').item.json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "field-title",
+              "name": "title",
+              "value": "={{ $('Drive Trigger — New File').item.json.name }}",
+              "type": "string"
+            },
+            {
+              "id": "field-content",
+              "name": "content",
+              "value": "={{ $json.data }}",
+              "type": "string"
+            },
+            {
+              "id": "field-source",
+              "name": "source",
+              "value": "drive",
+              "type": "string"
+            },
+            {
+              "id": "field-updated_at",
+              "name": "updated_at",
+              "value": "={{ $('Drive Trigger — New File').item.json.modifiedTime }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1000,
+        300
+      ],
+      "id": "a1b2c3d4-0004-4000-a000-000000000004",
+      "name": "Normalize Fields"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1250,
+        300
+      ],
+      "id": "a1b2c3d4-0005-4000-a000-000000000005",
+      "name": "→ To Shared Pipeline"
+    },
+    {
+      "parameters": {
+        "content": "## Drive Indexing Path（Google Drive 索引路徑）\n\n這是 Flow A 的 **Drive 入口點**，負責監聽 Google Drive 資料夾中的新檔案。\n\n**流程說明：**\n1. **Drive Trigger** — 輪詢指定資料夾，偵測新建立的檔案\n2. **Download File** — 下載檔案的二進位內容\n3. **Extract Text** — 從 PDF / DOCX 中擷取純文字\n4. **Normalize Fields** — 統一欄位格式（doc_id, title, content, source, updated_at）\n5. **→ To Shared Pipeline** — 終點節點，準備接入共用管線（Embedding + Vector Store）\n\n⚠️ 請將 `YOUR_GOOGLE_DRIVE_FOLDER_ID` 替換為實際的資料夾 ID，並設定 Google Drive OAuth2 憑證。",
+        "height": 380,
+        "width": 500,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        250,
+        -150
+      ],
+      "id": "a1b2c3d4-0006-4000-a000-000000000006",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Drive Trigger — New File": {
+      "main": [
+        [
+          {
+            "node": "Download File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download File": {
+      "main": [
+        [
+          {
+            "node": "Extract Text from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Text from File": {
+      "main": [
+        [
+          {
+            "node": "Normalize Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Fields": {
+      "main": [
+        [
+          {
+            "node": "→ To Shared Pipeline",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "00000000-0000-4000-a000-000000000000",
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": ""
+  },
+  "id": "",
+  "tags": []
+}

@@ -1,0 +1,183 @@
+{
+  "name": "[Unit 3] Flow A-2 — Notion Indexing Path",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "databaseId": {
+          "__rl": true,
+          "value": "YOUR_NOTION_KB_DATABASE_ID",
+          "mode": "id"
+        },
+        "simple": false
+      },
+      "id": "a1b2c3d4-1001-4000-a001-000000000001",
+      "name": "Notion Trigger — Page Added",
+      "type": "n8n-nodes-base.notionTrigger",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "credentials": {
+        "notionApi": {
+          "id": "notion_api",
+          "name": "notion_api"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "block",
+        "operation": "getAll",
+        "blockId": {
+          "__rl": true,
+          "mode": "url",
+          "value": "={{ $json.url }}"
+        },
+        "returnAll": true
+      },
+      "id": "a1b2c3d4-1001-4000-a001-000000000002",
+      "name": "Notion — Get Page Content",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        500,
+        300
+      ],
+      "credentials": {
+        "notionApi": {
+          "id": "notion_api",
+          "name": "notion_api"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "field_doc_id",
+              "name": "doc_id",
+              "value": "={{ $('Notion Trigger — Page Added').item.json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "field_title",
+              "name": "title",
+              "value": "={{ $('Notion Trigger — Page Added').item.json.properties.Name.title[0].text.content }}",
+              "type": "string"
+            },
+            {
+              "id": "field_content",
+              "name": "content",
+              "value": "={{ $json.results.map(b => b.paragraph?.rich_text?.map(t => t.plain_text).join('') ?? '').filter(t => t).join('\\n') }}",
+              "type": "string"
+            },
+            {
+              "id": "field_source",
+              "name": "source",
+              "value": "notion",
+              "type": "string"
+            },
+            {
+              "id": "field_updated_at",
+              "name": "updated_at",
+              "value": "={{ $('Notion Trigger — Page Added').item.json.last_edited_time }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-1001-4000-a001-000000000003",
+      "name": "Set — Normalize Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        750,
+        300
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "a1b2c3d4-1001-4000-a001-000000000004",
+      "name": "NoOp — Ready for Shared Pipeline",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1000,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Notion 索引入口點\n\n此工作流程是 Flow A 的 Notion 資料來源路徑。\n\n**流程說明：**\n1. **Notion Trigger**：監聽知識庫資料庫中新增或更新的頁面\n2. **Get Page Content**：取得頁面的完整內容區塊\n3. **Set（正規化欄位）**：將 Notion 資料轉換為統一格式\n   - `doc_id` ← 頁面 ID\n   - `title` ← 頁面標題\n   - `content` ← 頁面文字內容\n   - `source` ← \"notion\"\n   - `updated_at` ← 最後編輯時間\n4. **NoOp（端點）**：準備連接至共用的向量化管線\n\n⚠️ 請將 `YOUR_NOTION_KB_DATABASE_ID` 替換為實際的 Notion 知識庫資料庫 ID，並設定正確的 Notion API 憑證。",
+        "height": 400,
+        "width": 500,
+        "color": 5
+      },
+      "id": "a1b2c3d4-1001-4000-a001-000000000005",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        250,
+        -150
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Notion Trigger — Page Added": {
+      "main": [
+        [
+          {
+            "node": "Notion — Get Page Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion — Get Page Content": {
+      "main": [
+        [
+          {
+            "node": "Set — Normalize Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set — Normalize Fields": {
+      "main": [
+        [
+          {
+            "node": "NoOp — Ready for Shared Pipeline",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "f2a3b4c5-2001-4000-b001-000000000001",
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}

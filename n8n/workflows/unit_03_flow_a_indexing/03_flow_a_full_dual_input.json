@@ -1,0 +1,508 @@
+{
+  "name": "[Unit 3] Flow A — Full Dual-Input Indexing Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Unit 3: Flow A — 雙輸入索引管線（完整版）\n\n### 架構說明\n本工作流實作**雙輸入源的知識庫索引管線**，將 Google Drive 文件與 Notion 頁面統一處理後存入向量資料庫。\n\n### 兩條輸入路徑\n- **路徑 1（Drive）**：Google Drive Trigger → 下載檔案 → 擷取文字 → 正規化欄位\n- **路徑 2（Notion）**：Notion Trigger → 取得頁面內容 → 正規化欄位\n\n### 合併點（Merge）\n兩條路徑在 **Merge** 節點匯合，輸出統一格式：`doc_id`、`title`、`source`、`content`。\n\n### 共享處理管線\n1. **LLM 節點** — 使用 OpenAI 產生摘要（summary）、標籤（tags）與分段（chunks）\n2. **Embeddings 節點** — 將 chunks 向量化\n3. **Pinecone Upsert** — 將向量與 metadata 存入 Pinecone\n4. **Write Index Record** — 回寫 Notion Index Log DB，標記 status=INDEXED\n\n### 使用前準備\n- 替換所有 `YOUR_*` 佔位符為實際 ID\n- 設定四組憑證：Google Drive OAuth2、Notion API、OpenAI API、Pinecone API",
+        "height": 480,
+        "width": 620
+      },
+      "id": "sticky-note-1",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -200,
+        -200
+      ]
+    },
+    {
+      "parameters": {
+        "event": "fileCreated",
+        "folderId": "YOUR_GOOGLE_DRIVE_FOLDER_ID",
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        }
+      },
+      "id": "drive-trigger-1",
+      "name": "Google Drive Trigger",
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        100,
+        0
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "google_drive_oauth2",
+          "name": "google_drive_oauth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.id }}"
+        }
+      },
+      "id": "drive-download-1",
+      "name": "Download File",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        350,
+        0
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "google_drive_oauth2",
+          "name": "google_drive_oauth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "options": {}
+      },
+      "id": "extract-text-1",
+      "name": "Extract Text",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        600,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "drive-doc-id",
+              "name": "doc_id",
+              "value": "=drive_{{ $('Download File').item.json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "drive-title",
+              "name": "title",
+              "value": "={{ $('Download File').item.json.name }}",
+              "type": "string"
+            },
+            {
+              "id": "drive-source",
+              "name": "source",
+              "value": "google_drive",
+              "type": "string"
+            },
+            {
+              "id": "drive-content",
+              "name": "content",
+              "value": "={{ $json.data }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-drive-1",
+      "name": "Set Drive Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        850,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "event": "pageAddedToDatabase",
+        "databaseId": "YOUR_NOTION_KB_DATABASE_ID",
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        }
+      },
+      "id": "notion-trigger-1",
+      "name": "Notion Trigger",
+      "type": "n8n-nodes-base.notionTrigger",
+      "typeVersion": 1,
+      "position": [
+        100,
+        300
+      ],
+      "credentials": {
+        "notionApi": {
+          "id": "notion_api",
+          "name": "notion_api"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "block",
+        "operation": "getAll",
+        "blockId": "={{ $json.id }}",
+        "returnAll": true
+      },
+      "id": "notion-get-page-1",
+      "name": "Get Page Content",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        350,
+        300
+      ],
+      "credentials": {
+        "notionApi": {
+          "id": "notion_api",
+          "name": "notion_api"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "notion-doc-id",
+              "name": "doc_id",
+              "value": "=notion_{{ $('Notion Trigger').item.json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "notion-title",
+              "name": "title",
+              "value": "={{ $('Notion Trigger').item.json.properties.Name.title[0].plain_text }}",
+              "type": "string"
+            },
+            {
+              "id": "notion-source",
+              "name": "source",
+              "value": "notion",
+              "type": "string"
+            },
+            {
+              "id": "notion-content",
+              "name": "content",
+              "value": "={{ $json.results.map(b => b.paragraph?.rich_text?.map(t => t.plain_text).join('') || '').join('\\n') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-notion-1",
+      "name": "Set Notion Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        600,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "append",
+        "options": {}
+      },
+      "id": "merge-1",
+      "name": "Merge",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        1250,
+        150
+      ]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "options": {},
+        "messages": {
+          "values": [
+            {
+              "content": "=You are a document indexing assistant. Given the following document content, produce a JSON object with three fields:\n1. \"summary\": a concise 2-3 sentence summary\n2. \"tags\": an array of 3-8 relevant tags\n3. \"chunks\": an array of text chunks, each 300-500 characters, covering the full document\n\nDocument title: {{ $json.title }}\nDocument content:\n{{ $json.content }}\n\nRespond with valid JSON only."
+            }
+          ]
+        }
+      },
+      "id": "llm-openai-1",
+      "name": "Generate Summary & Chunks",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [
+        1500,
+        150
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "openai_api",
+          "name": "openai_api"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "text-embedding-3-small",
+        "options": {}
+      },
+      "id": "embeddings-openai-1",
+      "name": "Embeddings OpenAI",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1,
+      "position": [
+        1750,
+        150
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "openai_api",
+          "name": "openai_api"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "upsert",
+        "pineconeIndex": "YOUR_PINECONE_INDEX_NAME",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "doc_id",
+                "value": "={{ $json.doc_id }}"
+              },
+              {
+                "name": "title",
+                "value": "={{ $json.title }}"
+              },
+              {
+                "name": "source",
+                "value": "={{ $json.source }}"
+              },
+              {
+                "name": "summary",
+                "value": "={{ $json.summary }}"
+              },
+              {
+                "name": "tags",
+                "value": "={{ $json.tags }}"
+              }
+            ]
+          }
+        }
+      },
+      "id": "pinecone-upsert-1",
+      "name": "Pinecone Vector Store Upsert",
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1,
+      "position": [
+        2000,
+        150
+      ],
+      "credentials": {
+        "pineconeApi": {
+          "id": "pinecone_api",
+          "name": "pinecone_api"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "create",
+        "databaseId": "YOUR_NOTION_INDEX_LOG_DATABASE_ID",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "doc_id",
+              "title": "={{ $json.doc_id }}"
+            },
+            {
+              "key": "title",
+              "title": "={{ $json.title }}"
+            },
+            {
+              "key": "source",
+              "select": "={{ $json.source }}"
+            },
+            {
+              "key": "summary",
+              "richTextValue": "={{ $json.summary }}"
+            },
+            {
+              "key": "tags",
+              "multiSelect": "={{ $json.tags }}"
+            },
+            {
+              "key": "status",
+              "select": "INDEXED"
+            },
+            {
+              "key": "indexed_at",
+              "date": "={{ $now.toISO() }}"
+            }
+          ]
+        }
+      },
+      "id": "notion-write-index-1",
+      "name": "Write Index Record",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        2250,
+        150
+      ],
+      "credentials": {
+        "notionApi": {
+          "id": "notion_api",
+          "name": "notion_api"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Google Drive Trigger": {
+      "main": [
+        [
+          {
+            "node": "Download File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download File": {
+      "main": [
+        [
+          {
+            "node": "Extract Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Text": {
+      "main": [
+        [
+          {
+            "node": "Set Drive Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Drive Fields": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Page Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Page Content": {
+      "main": [
+        [
+          {
+            "node": "Set Notion Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Notion Fields": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Generate Summary & Chunks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Summary & Chunks": {
+      "main": [
+        [
+          {
+            "node": "Embeddings OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "main": [
+        [
+          {
+            "node": "Pinecone Vector Store Upsert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store Upsert": {
+      "main": [
+        [
+          {
+            "node": "Write Index Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "staticData": null,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "triggerCount": 2,
+  "tags": [],
+  "active": false,
+  "versionId": "1"
+}
