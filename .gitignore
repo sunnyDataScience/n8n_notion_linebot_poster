@@ -1,0 +1,3 @@
+# Sensitive files
+.mcp.json
+.env
