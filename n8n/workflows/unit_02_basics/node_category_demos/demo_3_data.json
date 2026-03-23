@@ -1,0 +1,146 @@
+{
+  "name": "Demo 3 — Data (印出明細)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "0099d932-5454-415b-ae1a-bc8ef266197b",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [200, 400]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "items",
+        "include": "allOtherFields"
+      },
+      "id": "6e19d226-4d2a-4142-9cd0-84915302e6c6",
+      "name": "Split Out — 拆開品項",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [480, 400]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": true,
+        "assignments": {
+          "assignments": [
+            { "id": "1", "name": "subtotal", "value": "={{ $json.price * $json.qty }}", "type": "number" }
+          ]
+        }
+      },
+      "id": "4601840e-8fcb-4c89-a7e9-d078804bbc06",
+      "name": "Set — 計算小計",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [700, 400]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const items = $input.all();\nconst customer = items[0].json.customer;\nconst lines = items.map(i =>\n  `${i.json.name}  x${i.json.qty}  $${i.json.price} = $${i.json.subtotal}`\n);\nconst total = items.reduce((s, i) => s + i.json.subtotal, 0);\n\nconst receipt = [\n  '╔══════════════════════╗',\n  '║    咖啡廳收據         ║',\n  '╠══════════════════════╣',\n  `║ 客人：${customer}`,\n  '╠──────────────────────╣',\n  ...lines.map(l => `║ ${l}`),\n  '╠──────────────────────╣',\n  `║ 合計：$${total}`,\n  `║ 品項數：${items.length}`,\n  '╚══════════════════════╝'\n].join('\\n');\n\nreturn [{ json: { customer, total, itemCount: items.length, receipt } }];"
+      },
+      "id": "1de15352-1b19-498d-b3af-c72021d5e380",
+      "name": "Code — 彙總收據",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [920, 400]
+    },
+    {
+      "parameters": {
+        "content": "## Demo 3：Data 資料節點\n### 比喻：「印出明細」\n\n**核心概念：** 重塑、拆分、計算、彙總資料\n\n```\n原始訂單 (1筆含陣列)\n   ↓ Split Out\n拆成 3 筆獨立品項\n   ↓ Set\n每筆加上小計 (price × qty)\n   ↓ Code\n彙總成一張收據\n```\n\n**教學重點：** 觀察每個節點的 output 數量變化\n1 → 3 → 3 → 1",
+        "height": 380,
+        "width": 800,
+        "color": 4
+      },
+      "id": "sticky-overview",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [80, -20]
+    },
+    {
+      "parameters": {
+        "content": "### Step 1：pinData\n預設訂單資料\n包含 `items` 陣列\n(3 個品項)\n\n→ 不需要 Set 節點造假資料\n→ 直接在 pin 面板修改",
+        "height": 200,
+        "width": 220,
+        "color": 6
+      },
+      "id": "sticky-pin",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [100, 400]
+    },
+    {
+      "parameters": {
+        "content": "### Step 2：Split Out\n把 `items` 陣列\n拆成獨立的 item\n\n1 筆 → 3 筆\n每筆保留 customer 欄位",
+        "height": 200,
+        "width": 220,
+        "color": 3
+      },
+      "id": "sticky-split",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [390, 400]
+    },
+    {
+      "parameters": {
+        "content": "### Step 3：Set\n新增 `subtotal` 欄位\n= price × qty\n\n用 expression：\n`{{ $json.price * $json.qty }}`",
+        "height": 200,
+        "width": 220,
+        "color": 5
+      },
+      "id": "sticky-calc",
+      "name": "Sticky Note3",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [610, 400]
+    },
+    {
+      "parameters": {
+        "content": "### Step 4：Code\n彙總所有品項\n算出合計金額\n印出收據格式\n\n3 筆 → 1 筆\n(runOnceForAllItems)",
+        "height": 200,
+        "width": 220,
+        "color": 2
+      },
+      "id": "sticky-code",
+      "name": "Sticky Note4",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [830, 400]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [[{ "node": "Split Out — 拆開品項", "type": "main", "index": 0 }]]
+    },
+    "Split Out — 拆開品項": {
+      "main": [[{ "node": "Set — 計算小計", "type": "main", "index": 0 }]]
+    },
+    "Set — 計算小計": {
+      "main": [[{ "node": "Code — 彙總收據", "type": "main", "index": 0 }]]
+    }
+  },
+  "pinData": {
+    "Manual Trigger": [
+      {
+        "json": {
+          "customer": "Alice",
+          "table": "5 號桌",
+          "items": [
+            { "name": "拿鐵", "price": 120, "qty": 2 },
+            { "name": "可頌", "price": 80, "qty": 1 },
+            { "name": "巧克力餅乾", "price": 50, "qty": 3 }
+          ]
+        }
+      }
+    ]
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "meta": { "templateCredsSetupCompleted": true },
+  "tags": []
+}
