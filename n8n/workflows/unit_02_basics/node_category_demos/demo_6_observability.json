@@ -7,7 +7,10 @@
       "name": "Error Trigger",
       "type": "n8n-nodes-base.errorTrigger",
       "typeVersion": 1,
-      "position": [200, 300]
+      "position": [
+        200,
+        300
+      ]
     },
     {
       "parameters": {
@@ -18,7 +21,10 @@
       "name": "Code — 萃取錯誤",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [480, 300]
+      "position": [
+        480,
+        300
+      ]
     },
     {
       "parameters": {
@@ -26,8 +32,18 @@
         "includeOtherFields": true,
         "assignments": {
           "assignments": [
-            { "id": "1", "name": "action", "value": "通知店長 + 寫入日誌資料庫", "type": "string" },
-            { "id": "2", "name": "notifyChannel", "value": "#incidents", "type": "string" }
+            {
+              "id": "1",
+              "name": "action",
+              "value": "通知店長 + 寫入日誌資料庫",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "notifyChannel",
+              "value": "#incidents",
+              "type": "string"
+            }
           ]
         }
       },
@@ -35,7 +51,10 @@
       "name": "Set — 格式化客訴記錄",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [740, 300]
+      "position": [
+        740,
+        300
+      ]
     },
     {
       "parameters": {},
@@ -43,7 +62,10 @@
       "name": "Manual Trigger",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
-      "position": [200, 700]
+      "position": [
+        200,
+        700
+      ]
     },
     {
       "parameters": {
@@ -54,13 +76,23 @@
       "name": "Code — 計算出餐時間 + SLA",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [480, 700]
+      "position": [
+        480,
+        700
+      ]
     },
     {
       "parameters": {
         "conditions": {
           "conditions": [
-            { "leftValue": "={{ $json.alertNeeded }}", "operator": { "type": "boolean", "operation": "true" }, "rightValue": "" }
+            {
+              "leftValue": "={{ $json.alertNeeded }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              },
+              "rightValue": ""
+            }
           ]
         }
       },
@@ -68,7 +100,10 @@
       "name": "IF — SLA 超時？",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
-      "position": [740, 700]
+      "position": [
+        740,
+        700
+      ]
     },
     {
       "parameters": {
@@ -76,7 +111,12 @@
         "includeOtherFields": true,
         "assignments": {
           "assignments": [
-            { "id": "1", "name": "alertAction", "value": "立即通知店長：出餐超時！", "type": "string" }
+            {
+              "id": "1",
+              "name": "alertAction",
+              "value": "立即通知店長：出餐超時！",
+              "type": "string"
+            }
           ]
         }
       },
@@ -84,7 +124,10 @@
       "name": "Set — 發送超時警報",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [1000, 620]
+      "position": [
+        1000,
+        620
+      ]
     },
     {
       "parameters": {
@@ -92,7 +135,12 @@
         "includeOtherFields": true,
         "assignments": {
           "assignments": [
-            { "id": "1", "name": "alertAction", "value": "正常記錄，無需警報", "type": "string" }
+            {
+              "id": "1",
+              "name": "alertAction",
+              "value": "正常記錄，無需警報",
+              "type": "string"
+            }
           ]
         }
       },
@@ -100,12 +148,15 @@
       "name": "Set — 正常記錄",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [1000, 780]
+      "position": [
+        1000,
+        780
+      ]
     },
     {
       "parameters": {
-        "content": "## Demo 6：Observability 可觀測性節點\n### 比喻：「出餐紀錄 + 客訴系統」\n\n**核心概念：** 監控、記錄、警報\n\n| 路徑 | 觸發方式 | 用途 |\n|------|----------|------|\n| 上方 | Error Trigger | 其他 workflow 出錯自動觸發 |\n| 下方 | Manual Trigger | 模擬出餐完成紀錄 |\n\n**教學重點：** Error Trigger 不需要手動啟動\n它在「其他 workflow」失敗時才會自動觸發",
-        "height": 320,
+        "content": "## Demo 6：Observability 可觀測性節點\n### 比喻：「出餐紀錄 + 客訴系統」\n\n**核心概念：** 監控、記錄、警報\n\n**兩條路徑：**\n- **上方** → Error Trigger：其他 workflow 出錯自動觸發\n- **下方** → Manual Trigger：模擬出餐完成紀錄\n\n**教學重點：** Error Trigger 不需要手動啟動\n它在「其他 workflow」失敗時才會自動觸發",
+        "height": 300,
         "width": 800,
         "color": 4
       },
@@ -113,52 +164,105 @@
       "name": "Sticky Note",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
-      "position": [80, 20]
+      "position": [
+        80,
+        -60
+      ]
     },
     {
       "parameters": {
         "content": "### 路徑 A：客訴系統 (Error Monitor)\n\n當其他 workflow 出錯時：\n1. Error Trigger 自動接收錯誤資訊\n2. Code 萃取 workflow 名稱、錯誤訊息\n3. Set 加上嚴重度 + 通知管道\n\n→ 實際可接 Notion / Slack 通知\n\n⚠️ 這裡的 pinData 模擬錯誤事件",
-        "height": 200,
-        "width": 600,
+        "height": 300,
+        "width": 740,
         "color": 7
       },
       "id": "sticky-error",
       "name": "Sticky Note1",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
-      "position": [120, 240]
+      "position": [
+        120,
+        140
+      ]
     },
     {
       "parameters": {
         "content": "### 路徑 B：出餐紀錄 (Audit Log + SLA)\n\n模擬訂單完成後：\n1. Manual Trigger 帶入完成訂單資料\n2. Code 計算出餐時間 + SLA 判定\n3. IF 判斷是否超時\n   - true → 發送超時警報\n   - false → 正常記錄\n\n**試試看：** 改 pinData 的 prepTimeMs\n- 180000 (3分鐘) → PASS\n- 600000 (10分鐘) → SLA_BREACH",
-        "height": 260,
-        "width": 600,
+        "height": 440,
+        "width": 1000,
         "color": 2
       },
       "id": "sticky-audit",
       "name": "Sticky Note2",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
-      "position": [120, 560]
+      "position": [
+        120,
+        440
+      ]
     }
   ],
   "connections": {
     "Error Trigger": {
-      "main": [[{ "node": "Code — 萃取錯誤", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Code — 萃取錯誤",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Code — 萃取錯誤": {
-      "main": [[{ "node": "Set — 格式化客訴記錄", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Set — 格式化客訴記錄",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Manual Trigger": {
-      "main": [[{ "node": "Code — 計算出餐時間 + SLA", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Code — 計算出餐時間 + SLA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Code — 計算出餐時間 + SLA": {
-      "main": [[{ "node": "IF — SLA 超時？", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "IF — SLA 超時？",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "IF — SLA 超時？": {
       "main": [
-        [{ "node": "Set — 發送超時警報", "type": "main", "index": 0 }],
-        [{ "node": "Set — 正常記錄", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Set — 發送超時警報",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set — 正常記錄",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     }
   },
@@ -166,7 +270,10 @@
     "Error Trigger": [
       {
         "json": {
-          "workflow": { "id": "123", "name": "Flow B — LINE Bot" },
+          "workflow": {
+            "id": "123",
+            "name": "Flow B — LINE Bot"
+          },
           "execution": {
             "id": "99",
             "error": {
@@ -191,7 +298,11 @@
     ]
   },
   "active": false,
-  "settings": { "executionOrder": "v1" },
-  "meta": { "templateCredsSetupCompleted": true },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
   "tags": []
 }

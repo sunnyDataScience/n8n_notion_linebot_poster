@@ -7,13 +7,23 @@
       "name": "Manual Trigger",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
-      "position": [200, 400]
+      "position": [
+        200,
+        400
+      ]
     },
     {
       "parameters": {
         "conditions": {
           "conditions": [
-            { "leftValue": "={{ $json.dineIn }}", "operator": { "type": "boolean", "operation": "true" }, "rightValue": "" }
+            {
+              "leftValue": "={{ $json.dineIn }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              },
+              "rightValue": ""
+            }
           ]
         }
       },
@@ -21,7 +31,10 @@
       "name": "IF — 內用還外帶？",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
-      "position": [480, 400]
+      "position": [
+        480,
+        400
+      ]
     },
     {
       "parameters": {
@@ -29,8 +42,18 @@
         "includeOtherFields": true,
         "assignments": {
           "assignments": [
-            { "id": "1", "name": "serving", "value": "瓷杯 + 托盤", "type": "string" },
-            { "id": "2", "name": "area", "value": "5 號桌", "type": "string" }
+            {
+              "id": "1",
+              "name": "serving",
+              "value": "瓷杯 + 托盤",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "area",
+              "value": "5 號桌",
+              "type": "string"
+            }
           ]
         }
       },
@@ -38,7 +61,10 @@
       "name": "內用準備",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [740, 300]
+      "position": [
+        740,
+        300
+      ]
     },
     {
       "parameters": {
@@ -46,8 +72,18 @@
         "includeOtherFields": true,
         "assignments": {
           "assignments": [
-            { "id": "1", "name": "serving", "value": "紙杯 + 紙袋", "type": "string" },
-            { "id": "2", "name": "pickupNumber", "value": "={{ Math.floor(Math.random() * 100) + 1 }}", "type": "number" }
+            {
+              "id": "1",
+              "name": "serving",
+              "value": "紙杯 + 紙袋",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "pickupNumber",
+              "value": "={{ Math.floor(Math.random() * 100) + 1 }}",
+              "type": "number"
+            }
           ]
         }
       },
@@ -55,7 +91,10 @@
       "name": "外帶包裝",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [740, 500]
+      "position": [
+        740,
+        500
+      ]
     },
     {
       "parameters": {
@@ -63,109 +102,265 @@
         "rules": {
           "values": [
             {
-              "conditions": { "conditions": [{ "leftValue": "={{ $json.size }}", "operator": { "type": "string", "operation": "equals" }, "rightValue": "S" }] },
-              "renameOutput": true, "outputKey": "Small"
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.size }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "S"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "Small"
             },
             {
-              "conditions": { "conditions": [{ "leftValue": "={{ $json.size }}", "operator": { "type": "string", "operation": "equals" }, "rightValue": "M" }] },
-              "renameOutput": true, "outputKey": "Medium"
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.size }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "M"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "Medium"
             },
             {
-              "conditions": { "conditions": [{ "leftValue": "={{ $json.size }}", "operator": { "type": "string", "operation": "equals" }, "rightValue": "L" }] },
-              "renameOutput": true, "outputKey": "Large"
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.size }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "L"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "Large"
             }
           ]
         },
-        "options": { "fallbackOutput": "extra" }
+        "options": {
+          "fallbackOutput": "extra"
+        }
       },
       "id": "e5c4945a-abbd-4d07-8240-7c9fce37113a",
       "name": "Switch — 選擇杯子大小",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.4,
-      "position": [480, 800]
+      "position": [
+        480,
+        800
+      ]
     },
     {
-      "parameters": { "mode": "manual", "includeOtherFields": true, "assignments": { "assignments": [{ "id": "1", "name": "cup", "value": "8oz 小杯", "type": "string" }, { "id": "2", "name": "price", "value": 55, "type": "number" }] } },
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": true,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "cup",
+              "value": "8oz 小杯",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "price",
+              "value": 55,
+              "type": "number"
+            }
+          ]
+        }
+      },
       "id": "6d486059-e8a3-4b94-919e-8090807c42ee",
       "name": "小杯 8oz",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [740, 700]
+      "position": [
+        740,
+        700
+      ]
     },
     {
-      "parameters": { "mode": "manual", "includeOtherFields": true, "assignments": { "assignments": [{ "id": "1", "name": "cup", "value": "12oz 中杯", "type": "string" }, { "id": "2", "name": "price", "value": 75, "type": "number" }] } },
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": true,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "cup",
+              "value": "12oz 中杯",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "price",
+              "value": 75,
+              "type": "number"
+            }
+          ]
+        }
+      },
       "id": "6ed46560-40ac-425d-b1ed-4d2c77cbac63",
       "name": "中杯 12oz",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [740, 820]
+      "position": [
+        740,
+        820
+      ]
     },
     {
-      "parameters": { "mode": "manual", "includeOtherFields": true, "assignments": { "assignments": [{ "id": "1", "name": "cup", "value": "16oz 大杯", "type": "string" }, { "id": "2", "name": "price", "value": 95, "type": "number" }] } },
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": true,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "cup",
+              "value": "16oz 大杯",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "price",
+              "value": 95,
+              "type": "number"
+            }
+          ]
+        }
+      },
       "id": "cd8b7303-72e8-49e6-8038-14d03abc628b",
       "name": "大杯 16oz",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [740, 940]
+      "position": [
+        740,
+        940
+      ]
     },
     {
       "parameters": {
-        "content": "## Demo 2：Control 控制節點\n### 比喻：「內用還外帶？」\n\n**核心概念：** 根據條件把資料送往不同路徑\n\n| 節點 | 分支數 | 用途 |\n|------|--------|------|\n| **IF** | 2 (true/false) | 二選一判斷 |\n| **Switch** | N (多條規則) | 多選一路由 |\n\n**試試看：** 修改 pinData 裡的 `dineIn` 和 `size` 值，觀察路徑變化",
-        "height": 310,
-        "width": 800,
+        "content": "## Demo 2：Control 控制節點\n### 比喻：「內用還外帶？」\n\n**核心概念：** 根據條件把資料送往不同路徑\n\n**兩種控制節點：**\n- **IF** → 2 條分支 (true / false)，二選一判斷\n- **Switch** → N 條分支 (多條規則)，多選一路由\n\n**試試看：** 修改 pinData 裡的 `dineIn` 和 `size` 值，觀察路徑變化",
+        "height": 300,
+        "width": 520,
         "color": 4
       },
       "id": "sticky-overview",
       "name": "Sticky Note",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
-      "position": [80, 40]
+      "position": [
+        80,
+        -60
+      ]
     },
     {
       "parameters": {
         "content": "### IF 節點 — 二選一\n`dineIn === true` → 內用\n`dineIn === false` → 外帶\n\n上方輸出 = true (內用)\n下方輸出 = false (外帶)",
-        "height": 280,
-        "width": 380,
+        "height": 460,
+        "width": 500,
         "color": 6
       },
       "id": "sticky-if",
       "name": "Sticky Note1",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
-      "position": [380, 240]
+      "position": [
+        360,
+        140
+      ]
     },
     {
       "parameters": {
         "content": "### Switch 節點 — 多選一\n根據 `size` 欄位路由：\n\n- Output 0 → S → 小杯 8oz ($55)\n- Output 1 → M → 中杯 12oz ($75)\n- Output 2 → L → 大杯 16oz ($95)\n- Fallback → 未知尺寸",
-        "height": 300,
-        "width": 380,
+        "height": 480,
+        "width": 500,
         "color": 3
       },
       "id": "sticky-switch",
       "name": "Sticky Note2",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
-      "position": [380, 640]
+      "position": [
+        360,
+        540
+      ]
     }
   ],
   "connections": {
     "Manual Trigger": {
-      "main": [[
-        { "node": "IF — 內用還外帶？", "type": "main", "index": 0 },
-        { "node": "Switch — 選擇杯子大小", "type": "main", "index": 0 }
-      ]]
+      "main": [
+        [
+          {
+            "node": "IF — 內用還外帶？",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Switch — 選擇杯子大小",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "IF — 內用還外帶？": {
       "main": [
-        [{ "node": "內用準備", "type": "main", "index": 0 }],
-        [{ "node": "外帶包裝", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "內用準備",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "外帶包裝",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Switch — 選擇杯子大小": {
       "main": [
-        [{ "node": "小杯 8oz", "type": "main", "index": 0 }],
-        [{ "node": "中杯 12oz", "type": "main", "index": 0 }],
-        [{ "node": "大杯 16oz", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "小杯 8oz",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "中杯 12oz",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "大杯 16oz",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     }
   },
@@ -184,7 +379,11 @@
     ]
   },
   "active": false,
-  "settings": { "executionOrder": "v1" },
-  "meta": { "templateCredsSetupCompleted": true },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
   "tags": []
 }

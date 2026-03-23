@@ -7,7 +7,10 @@
       "name": "Manual Trigger",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
-      "position": [200, 400]
+      "position": [
+        200,
+        400
+      ]
     },
     {
       "parameters": {
@@ -18,7 +21,10 @@
       "name": "Split Out — 拆開品項",
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
-      "position": [480, 400]
+      "position": [
+        480,
+        400
+      ]
     },
     {
       "parameters": {
@@ -26,7 +32,12 @@
         "includeOtherFields": true,
         "assignments": {
           "assignments": [
-            { "id": "1", "name": "subtotal", "value": "={{ $json.price * $json.qty }}", "type": "number" }
+            {
+              "id": "1",
+              "name": "subtotal",
+              "value": "={{ $json.price * $json.qty }}",
+              "type": "number"
+            }
           ]
         }
       },
@@ -34,7 +45,10 @@
       "name": "Set — 計算小計",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [700, 400]
+      "position": [
+        700,
+        400
+      ]
     },
     {
       "parameters": {
@@ -45,7 +59,10 @@
       "name": "Code — 彙總收據",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [920, 400]
+      "position": [
+        920,
+        400
+      ]
     },
     {
       "parameters": {
@@ -58,12 +75,15 @@
       "name": "Sticky Note",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
-      "position": [80, -20]
+      "position": [
+        80,
+        -60
+      ]
     },
     {
       "parameters": {
         "content": "### Step 1：pinData\n預設訂單資料\n包含 `items` 陣列\n(3 個品項)\n\n→ 不需要 Set 節點造假資料\n→ 直接在 pin 面板修改",
-        "height": 200,
+        "height": 280,
         "width": 220,
         "color": 6
       },
@@ -71,12 +91,15 @@
       "name": "Sticky Note1",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
-      "position": [100, 400]
+      "position": [
+        100,
+        280
+      ]
     },
     {
       "parameters": {
         "content": "### Step 2：Split Out\n把 `items` 陣列\n拆成獨立的 item\n\n1 筆 → 3 筆\n每筆保留 customer 欄位",
-        "height": 200,
+        "height": 280,
         "width": 220,
         "color": 3
       },
@@ -84,12 +107,15 @@
       "name": "Sticky Note2",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
-      "position": [390, 400]
+      "position": [
+        380,
+        280
+      ]
     },
     {
       "parameters": {
         "content": "### Step 3：Set\n新增 `subtotal` 欄位\n= price × qty\n\n用 expression：\n`{{ $json.price * $json.qty }}`",
-        "height": 200,
+        "height": 280,
         "width": 220,
         "color": 5
       },
@@ -97,12 +123,15 @@
       "name": "Sticky Note3",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
-      "position": [610, 400]
+      "position": [
+        600,
+        280
+      ]
     },
     {
       "parameters": {
         "content": "### Step 4：Code\n彙總所有品項\n算出合計金額\n印出收據格式\n\n3 筆 → 1 筆\n(runOnceForAllItems)",
-        "height": 200,
+        "height": 280,
         "width": 220,
         "color": 2
       },
@@ -110,18 +139,45 @@
       "name": "Sticky Note4",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
-      "position": [830, 400]
+      "position": [
+        820,
+        280
+      ]
     }
   ],
   "connections": {
     "Manual Trigger": {
-      "main": [[{ "node": "Split Out — 拆開品項", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Split Out — 拆開品項",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Split Out — 拆開品項": {
-      "main": [[{ "node": "Set — 計算小計", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Set — 計算小計",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Set — 計算小計": {
-      "main": [[{ "node": "Code — 彙總收據", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Code — 彙總收據",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "pinData": {
@@ -131,16 +187,32 @@
           "customer": "Alice",
           "table": "5 號桌",
           "items": [
-            { "name": "拿鐵", "price": 120, "qty": 2 },
-            { "name": "可頌", "price": 80, "qty": 1 },
-            { "name": "巧克力餅乾", "price": 50, "qty": 3 }
+            {
+              "name": "拿鐵",
+              "price": 120,
+              "qty": 2
+            },
+            {
+              "name": "可頌",
+              "price": 80,
+              "qty": 1
+            },
+            {
+              "name": "巧克力餅乾",
+              "price": 50,
+              "qty": 3
+            }
           ]
         }
       }
     ]
   },
   "active": false,
-  "settings": { "executionOrder": "v1" },
-  "meta": { "templateCredsSetupCompleted": true },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
   "tags": []
 }

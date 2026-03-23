@@ -7,19 +7,30 @@
       "name": "Manual Trigger",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
-      "position": [200, 300]
+      "position": [
+        200,
+        300
+      ]
     },
     {
       "parameters": {
         "rule": {
-          "interval": [{ "field": "minutes", "minutesInterval": 30 }]
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 30
+            }
+          ]
         }
       },
       "id": "8a6eb022-d89d-40f3-9497-12797eca7e16",
       "name": "Schedule Trigger",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.3,
-      "position": [200, 540]
+      "position": [
+        200,
+        540
+      ]
     },
     {
       "parameters": {
@@ -31,17 +42,40 @@
       "name": "Webhook Trigger",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
-      "position": [200, 780]
+      "position": [
+        200,
+        780
+      ]
     },
     {
       "parameters": {
         "mode": "manual",
         "assignments": {
           "assignments": [
-            { "id": "1", "name": "orderId", "value": "={{ $now.toFormat(\"yyyyMMddHHmmss\") }}", "type": "string" },
-            { "id": "2", "name": "item", "value": "={{ $json.body?.item ?? $json.item ?? \"拿鐵\" }}", "type": "string" },
-            { "id": "3", "name": "qty", "value": "={{ $json.body?.qty ?? $json.qty ?? 1 }}", "type": "number" },
-            { "id": "4", "name": "status", "value": "received", "type": "string" }
+            {
+              "id": "1",
+              "name": "orderId",
+              "value": "={{ $now.toFormat(\"yyyyMMddHHmmss\") }}",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "item",
+              "value": "={{ $json.body?.item ?? $json.item ?? \"拿鐵\" }}",
+              "type": "string"
+            },
+            {
+              "id": "3",
+              "name": "qty",
+              "value": "={{ $json.body?.qty ?? $json.qty ?? 1 }}",
+              "type": "number"
+            },
+            {
+              "id": "4",
+              "name": "status",
+              "value": "received",
+              "type": "string"
+            }
           ]
         }
       },
@@ -49,7 +83,10 @@
       "name": "Format Order Receipt",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [520, 540]
+      "position": [
+        520,
+        540
+      ]
     },
     {
       "parameters": {
@@ -60,25 +97,31 @@
       "name": "Respond to Webhook",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
-      "position": [780, 540]
+      "position": [
+        780,
+        540
+      ]
     },
     {
       "parameters": {
-        "content": "## Demo 1：Trigger 觸發節點\n### 比喻：客人按下「送出訂單」\n\n**核心概念：** 每個 Workflow 至少需要一個 Trigger 來啟動\n\n| 觸發類型 | 用途 | 實際場景 |\n|---------|------|--------|\n| Manual | 手動按鈕測試 | 開發除錯用 |\n| Schedule | 定時自動執行 | 每 30 分鐘巡檢 |\n| Webhook | 外部系統呼叫 | LINE Bot / App |\n\n**教學重點：** 三個 Trigger 都連到同一個節點 (fan-in 模式)",
-        "height": 340,
-        "width": 820,
+        "content": "## Demo 1：Trigger 觸發節點\n### 比喻：客人按下「送出訂單」\n\n**核心概念：** 每個 Workflow 至少需要一個 Trigger 來啟動\n\n**三種觸發方式：**\n- **Manual** → 手動按鈕測試（開發除錯用）\n- **Schedule** → 定時自動執行（每 30 分鐘巡檢）\n- **Webhook** → 外部系統呼叫（LINE Bot / App）\n\n**教學重點：** 三個 Trigger 都連到同一個節點 (fan-in 模式)",
+        "height": 320,
+        "width": 520,
         "color": 4
       },
       "id": "sticky-overview",
       "name": "Sticky Note",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
-      "position": [80, -60]
+      "position": [
+        80,
+        -60
+      ]
     },
     {
       "parameters": {
         "content": "### 1. Manual Trigger\n按一下就跑，開發測試最方便\n\n→ 搭配 pinData 預設資料\n不需要真的發 HTTP",
-        "height": 180,
+        "height": 260,
         "width": 240,
         "color": 6
       },
@@ -86,12 +129,15 @@
       "name": "Sticky Note1",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
-      "position": [100, 300]
+      "position": [
+        100,
+        180
+      ]
     },
     {
       "parameters": {
         "content": "### 2. Schedule Trigger\n時間到自動觸發\n\n每 30 分鐘 = 自動重複訂單\n像是定期備份、排程報表",
-        "height": 180,
+        "height": 260,
         "width": 240,
         "color": 3
       },
@@ -99,12 +145,15 @@
       "name": "Sticky Note2",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
-      "position": [100, 540]
+      "position": [
+        100,
+        420
+      ]
     },
     {
       "parameters": {
         "content": "### 3. Webhook Trigger\n外部系統 POST 進來觸發\n\n這是 LINE Bot 實際用的方式\npath: /webhook/food-order",
-        "height": 180,
+        "height": 260,
         "width": 240,
         "color": 5
       },
@@ -112,34 +161,72 @@
       "name": "Sticky Note3",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
-      "position": [100, 780]
+      "position": [
+        100,
+        660
+      ]
     },
     {
       "parameters": {
         "content": "### 共用處理區\n三種觸發 → 同一個 Format 節點\n\n**Fan-in 模式：**\n多條入口，一個出口\n\n→ Respond to Webhook 只在\nWebhook 觸發時才會執行",
-        "height": 220,
-        "width": 360,
+        "height": 320,
+        "width": 480,
         "color": 2
       },
       "id": "sticky-process",
       "name": "Sticky Note4",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
-      "position": [440, 340]
+      "position": [
+        420,
+        340
+      ]
     }
   ],
   "connections": {
     "Manual Trigger": {
-      "main": [[{ "node": "Format Order Receipt", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Format Order Receipt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Schedule Trigger": {
-      "main": [[{ "node": "Format Order Receipt", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Format Order Receipt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Webhook Trigger": {
-      "main": [[{ "node": "Format Order Receipt", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Format Order Receipt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Format Order Receipt": {
-      "main": [[{ "node": "Respond to Webhook", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "pinData": {
@@ -180,7 +267,11 @@
     ]
   },
   "active": false,
-  "settings": { "executionOrder": "v1" },
-  "meta": { "templateCredsSetupCompleted": true },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
   "tags": []
 }

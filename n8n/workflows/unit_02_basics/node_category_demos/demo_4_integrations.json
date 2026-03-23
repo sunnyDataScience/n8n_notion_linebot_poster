@@ -7,7 +7,10 @@
       "name": "Manual Trigger",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
-      "position": [200, 500]
+      "position": [
+        200,
+        500
+      ]
     },
     {
       "parameters": {
@@ -22,7 +25,10 @@
       "name": "Slack — 通知廚房",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.4,
-      "position": [520, 380]
+      "position": [
+        520,
+        380
+      ]
     },
     {
       "parameters": {
@@ -37,25 +43,31 @@
       "name": "HTTP — 叫外送 API",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [520, 620]
+      "position": [
+        520,
+        620
+      ]
     },
     {
       "parameters": {
-        "content": "## Demo 4：Integrations 整合節點\n### 比喻：「通知廚房、叫外送員」\n\n**核心概念：** 串接第三方服務\n\n| 方式 | 節點 | 優點 |\n|------|------|------|\n| 專用整合 | Slack、Gmail、Notion... | 內建認證、參數提示 |\n| 萬用 HTTP | HTTP Request | 什麼 API 都能打 |\n\nn8n 有 **400+** 專用整合節點\n找不到的就用 HTTP Request\n\n**Fan-out 模式：** 一筆訂單同時通知兩個服務",
-        "height": 360,
-        "width": 560,
+        "content": "## Demo 4：Integrations 整合節點\n### 比喻：「通知廚房、叫外送員」\n\n**核心概念：** 串接第三方服務\n\n**兩種整合方式：**\n- **專用整合**（Slack、Gmail、Notion…）→ 內建認證、參數提示\n- **萬用 HTTP**（HTTP Request）→ 什麼 API 都能打\n\nn8n 有 **400+** 專用整合節點\n找不到的就用 HTTP Request\n\n**Fan-out 模式：** 一筆訂單同時通知兩個服務",
+        "height": 340,
+        "width": 520,
         "color": 4
       },
       "id": "sticky-overview",
       "name": "Sticky Note",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
-      "position": [80, 60]
+      "position": [
+        80,
+        -60
+      ]
     },
     {
       "parameters": {
         "content": "### 專用節點：Slack\n✅ 內建 OAuth 認證\n✅ 參數有下拉選單\n✅ 錯誤訊息友善\n\n需要先設定 Slack credential\n選擇頻道 → 送出訊息",
-        "height": 220,
+        "height": 300,
         "width": 280,
         "color": 6
       },
@@ -63,12 +75,15 @@
       "name": "Sticky Note1",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
-      "position": [420, 300]
+      "position": [
+        420,
+        220
+      ]
     },
     {
       "parameters": {
         "content": "### 萬用節點：HTTP Request\n✅ 什麼 API 都能打\n✅ 支援各種認證方式\n⚠️ 需要自己組 headers/body\n\n這裡用 httpbin.org 測試\n實際換成外送平台 API",
-        "height": 220,
+        "height": 300,
         "width": 280,
         "color": 3
       },
@@ -76,15 +91,28 @@
       "name": "Sticky Note2",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
-      "position": [420, 540]
+      "position": [
+        420,
+        460
+      ]
     }
   ],
   "connections": {
     "Manual Trigger": {
-      "main": [[
-        { "node": "Slack — 通知廚房", "type": "main", "index": 0 },
-        { "node": "HTTP — 叫外送 API", "type": "main", "index": 0 }
-      ]]
+      "main": [
+        [
+          {
+            "node": "Slack — 通知廚房",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP — 叫外送 API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "pinData": {
@@ -103,7 +131,11 @@
     ]
   },
   "active": false,
-  "settings": { "executionOrder": "v1" },
-  "meta": { "templateCredsSetupCompleted": true },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
   "tags": []
 }
