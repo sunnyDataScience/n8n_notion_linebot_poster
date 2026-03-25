@@ -11,37 +11,28 @@
     },
     {
       "parameters": {
-        "numberOfRecords": 1
-      },
-      "id": "11111111-0001-0001-0001-000000000002",
-      "name": "Fake Sales",
-      "type": "n8n-nodes-fake-sales.fakeSales",
-      "typeVersion": 1,
-      "position": [460, 400]
-    },
-    {
-      "parameters": {
         "mode": "manual",
-        "includeOtherFields": true,
         "assignments": {
           "assignments": [
             {"id": "1", "name": "greeting", "value": "=Hello n8n! 我拿到了 {{ $json.customer }} 的商機資料！", "type": "string"},
-            {"id": "2", "name": "timestamp", "value": "={{ $now.toISO() }}", "type": "string"}
+            {"id": "2", "name": "dealValue", "value": "={{ $json.amount }}", "type": "number"},
+            {"id": "3", "name": "timestamp", "value": "={{ $now.toISO() }}", "type": "string"}
           ]
-        }
+        },
+        "includeOtherFields": true
       },
-      "id": "11111111-0001-0001-0001-000000000003",
+      "id": "11111111-0001-0001-0001-000000000002",
       "name": "Edit Fields — 加上問候語",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [720, 400]
+      "position": [480, 400]
     },
     {
       "parameters": {
-        "content": "## L01：Hello n8n\n### 你的第一個 Workflow\n\n**學習目標：**\n1. 認識 n8n 的介面\n2. 了解「節點」和「連線」\n3. 按下 Execute 看結果\n\n**操作步驟：**\n1. 按右上角「Test Workflow」按鈕\n2. 點擊每個節點，看右邊「Output」面板\n3. 觀察資料如何從左流到右\n\n**核心觀念：**\n- 每個 Workflow 都從 Trigger 開始\n- 資料像水一樣從左流到右\n- 每個節點都會產出資料給下一個節點\n\n**Fake Sales 節點：**\n這是我們自己建的社群節點（n8n-nodes-fake-sales）\n整個課程都會用它來產生業務銷售假資料",
+        "content": "## L01：Hello n8n\n### 你的第一個 Workflow\n\n**學習目標：**\n1. 認識 n8n 的介面\n2. 了解「節點」和「連線」\n3. 按下 Execute 看結果\n\n**操作步驟：**\n1. 按右上角「Test Workflow」按鈕\n2. 點擊 Edit Fields 節點\n3. 看右邊面板的「輸出」\n\n**核心觀念：**\n- 每個 Workflow 都從 Trigger 開始\n- 資料像水一樣從左流到右\n- 每個節點都會產出資料給下一個節點\n- pinData = 預設的假資料（不用真的串 API）",
         "height": 480, "width": 500, "color": 4
       },
-      "id": "11111111-0001-0001-0001-000000000004",
+      "id": "11111111-0001-0001-0001-000000000003",
       "name": "Sticky Note",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
@@ -49,48 +40,34 @@
     },
     {
       "parameters": {
-        "content": "### 1. Manual Trigger\n按一下就啟動\n\n每個 Workflow\n至少要有一個 Trigger\n\n→ 這是「起點」",
-        "height": 220, "width": 200, "color": 6
+        "content": "### 1. Manual Trigger\n按一下就啟動\n\n這裡用 pinData 預設\n一筆銷售資料\n\n→ 點開看 Output\n→ 這就是 JSON！",
+        "height": 200, "width": 220, "color": 6
       },
-      "id": "11111111-0001-0001-0001-000000000005",
+      "id": "11111111-0001-0001-0001-000000000004",
       "name": "Sticky Note1",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
-      "position": [120, 300]
+      "position": [120, 140]
     },
     {
       "parameters": {
-        "content": "### 2. Fake Sales\n自動產生假的銷售資料\n\n包含：\n- 業務姓名\n- 客戶公司\n- 金額、階段\n- 產品、區域…\n\n→ 點開看 Output\n→ 這就是 JSON！",
-        "height": 300, "width": 220, "color": 3
+        "content": "### 2. Edit Fields\n用 Expression 加工資料\n\n`{{ $json.customer }}`\n= 取上一個節點的值\n\n→ 試試改 greeting\n→ 重新執行看結果",
+        "height": 200, "width": 220, "color": 3
       },
-      "id": "11111111-0001-0001-0001-000000000006",
+      "id": "11111111-0001-0001-0001-000000000005",
       "name": "Sticky Note2",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
-      "position": [370, 200]
-    },
-    {
-      "parameters": {
-        "content": "### 3. Edit Fields\n在原本的資料上\n加上自訂欄位\n\nExpression 語法：\n`{{ $json.customer }}`\n= 取上一個節點的 customer 值\n\n→ 試試改 greeting 的文字\n→ 重新執行看結果",
-        "height": 300, "width": 220, "color": 5
-      },
-      "id": "11111111-0001-0001-0001-000000000007",
-      "name": "Sticky Note3",
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [630, 200]
+      "position": [400, 140]
     }
   ],
   "connections": {
     "Manual Trigger": {
-      "main": [[{"node": "Fake Sales", "type": "main", "index": 0}]]
-    },
-    "Fake Sales": {
       "main": [[{"node": "Edit Fields — 加上問候語", "type": "main", "index": 0}]]
     }
   },
   "pinData": {
-    "Fake Sales": [
+    "Manual Trigger": [
       {
         "json": {
           "id": 1,
@@ -99,9 +76,6 @@
           "region": "北區",
           "customer": "鴻海精密工業",
           "industry": "電子製造",
-          "contact": "張經理",
-          "email": "chang.mgr@foxconn-demo.tw",
-          "phone": "02-2268-0001",
           "product": "企業雲端方案 Pro",
           "category": "雲端服務",
           "unitPrice": 128000,
