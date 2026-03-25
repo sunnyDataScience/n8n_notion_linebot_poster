@@ -10,9 +10,9 @@
       "position": [200, 300]
     },
     {
-      "parameters": {"mode": "runOnceForAllItems", "jsCode": "return [{ json: { type: 'ERROR', workflow: $json.workflow?.name || 'unknown', message: $json.execution?.error?.message || 'unknown', executionId: String($json.execution?.id || ''), timestamp: $now.toISO(), severity: 'HIGH' }}];"},
+      "parameters": {"mode": "runOnceForAllItems", "language": "python", "pythonCode": "item = _input.all()[0].json\nwf = item.get('workflow', {})\nexec_data = item.get('execution', {})\nerr = exec_data.get('error', {})\n\nfrom datetime import datetime\nreturn [{'json': {\n    'type': 'ERROR',\n    'workflow': wf.get('name', 'unknown'),\n    'message': err.get('message', 'unknown'),\n    'executionId': str(exec_data.get('id', '')),\n    'timestamp': datetime.now().isoformat(),\n    'severity': 'HIGH'\n}}]"},
       "id": "bbbbbbbb-0001-0001-0001-000000000002",
-      "name": "Code — 萃取錯誤",
+      "name": "Code (Python) — 萃取錯誤",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [480, 300]
@@ -34,9 +34,9 @@
       "position": [200, 700]
     },
     {
-      "parameters": {"mode": "runOnceForAllItems", "jsCode": "const items = $input.all();\nconst today = new Date();\nreturn items.map(i => { const deal = i.json; const closeDate = new Date(deal.expectedCloseDate); const daysRemaining = Math.ceil((closeDate - today) / (1000*60*60*24)); const isOverdue = daysRemaining < 0; const status = isOverdue ? 'OVERDUE' : (daysRemaining <= 14 ? 'URGENT' : 'ON_TRACK'); return { json: { ...deal, daysRemaining, isOverdue, status, alertNeeded: isOverdue || daysRemaining <= 14, timestamp: $now.toISO() }}; });"},
+      "parameters": {"mode": "runOnceForAllItems", "language": "python", "pythonCode": "from datetime import datetime, date\nimport math\n\nitems = _input.all()\ntoday = date.today()\nresults = []\n\nfor i in items:\n    deal = dict(i.json)\n    close_str = deal.get('expectedCloseDate', '')\n    try:\n        close_date = datetime.strptime(close_str, '%Y-%m-%d').date()\n        days_remaining = (close_date - today).days\n    except:\n        days_remaining = 999\n    is_overdue = days_remaining < 0\n    status = 'OVERDUE' if is_overdue else ('URGENT' if days_remaining <= 14 else 'ON_TRACK')\n    deal.update({\n        'daysRemaining': days_remaining,\n        'isOverdue': is_overdue,\n        'status': status,\n        'alertNeeded': is_overdue or days_remaining <= 14,\n        'timestamp': datetime.now().isoformat()\n    })\n    results.append({'json': deal})\n\nreturn results"},
       "id": "bbbbbbbb-0001-0001-0001-000000000005",
-      "name": "Code — 到期天數",
+      "name": "Code (Python) — 到期天數",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [480, 700]
@@ -78,9 +78,9 @@
     }
   ],
   "connections": {
-    "Error Trigger": {"main": [[{"node": "Code — 萃取錯誤", "type": "main", "index": 0}]]},
+    "Error Trigger": {"main": [[{"node": "Code (Python) — 萃取錯誤", "type": "main", "index": 0}]]},
     "Code — 萃取錯誤": {"main": [[{"node": "Set — 格式化異常", "type": "main", "index": 0}]]},
-    "Fake Sales": {"main": [[{"node": "Code — 到期天數", "type": "main", "index": 0}]]},
+    "Fake Sales": {"main": [[{"node": "Code (Python) — 到期天數", "type": "main", "index": 0}]]},
     "Code — 到期天數": {"main": [[{"node": "IF — 需要警報？", "type": "main", "index": 0}]]},
     "IF — 需要警報？": {"main": [[{"node": "發送警報", "type": "main", "index": 0}], [{"node": "正常記錄", "type": "main", "index": 0}]]}
   },
