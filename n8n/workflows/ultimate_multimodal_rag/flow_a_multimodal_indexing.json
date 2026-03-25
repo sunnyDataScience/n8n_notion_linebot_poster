@@ -1,158 +1,137 @@
 {
-  "name": "[Ultimate] Flow A — Multimodal Indexing Pipeline",
+  "name": "[Enterprise] Flow A — Multimodal Indexing Pipeline",
   "nodes": [
     {
       "parameters": {
-        "pollTimes": {
-          "item": [
-            {
-              "mode": "everyMinute"
-            }
-          ]
-        },
+        "pollTimes": { "item": [{ "mode": "everyMinute" }] },
         "triggerOn": "specificFolder",
-        "folderToWatch": {
-          "__rl": true,
-          "value": "YOUR_GOOGLE_DRIVE_FOLDER_ID",
-          "mode": "id"
-        },
+        "folderToWatch": { "__rl": true, "value": "YOUR_GOOGLE_DRIVE_FOLDER_ID", "mode": "id" },
         "event": "fileCreated",
         "options": {}
       },
       "type": "n8n-nodes-base.googleDriveTrigger",
       "typeVersion": 1,
-      "position": [-120, -160],
-      "id": "97094ff9-e89d-4b56-861e-03d0cdee8f1a",
+      "position": [-200, 0],
+      "id": "a0010001-0001-4a00-b001-000000000001",
       "name": "Google Drive Trigger",
-      "credentials": {
-        "googleDriveOAuth2Api": {
-          "id": "GOOGLE_DRIVE_CREDENTIAL_ID",
-          "name": "Google Drive account"
-        }
-      }
+      "credentials": { "googleDriveOAuth2Api": { "id": "GOOGLE_DRIVE_CREDENTIAL_ID", "name": "Google Drive account" } }
     },
     {
       "parameters": {
         "operation": "download",
-        "fileId": {
-          "__rl": true,
-          "value": "={{ $json.id }}",
-          "mode": "id"
-        },
+        "fileId": { "__rl": true, "value": "={{ $json.id }}", "mode": "id" },
         "options": {}
       },
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
-      "position": [120, -160],
-      "id": "3509f603-b53b-40fc-a8b9-3dc70122bccc",
+      "position": [0, 0],
+      "id": "a0010001-0002-4a00-b002-000000000002",
       "name": "Download File",
-      "credentials": {
-        "googleDriveOAuth2Api": {
-          "id": "GOOGLE_DRIVE_CREDENTIAL_ID",
-          "name": "Google Drive account"
-        }
-      }
+      "credentials": { "googleDriveOAuth2Api": { "id": "GOOGLE_DRIVE_CREDENTIAL_ID", "name": "Google Drive account" } }
     },
     {
       "parameters": {
-        "jsCode": "const items = $input.all();\nreturn items.filter(item => {\n  const mime = item.json.mimeType || item.binary?.data?.mimeType || '';\n  return mime.startsWith('text/') || mime === 'application/pdf';\n});"
+        "jsCode": "const items = $input.all();\nconst mime = items[0]?.json?.mimeType || items[0]?.binary?.data?.mimeType || '';\nconst fileId = items[0]?.json?.id || '';\nconst fileName = items[0]?.json?.name || '';\nconst modifiedTime = items[0]?.json?.modifiedTime || '';\n\n// MinerU-eligible: PDF, DOCX, PPTX\nif (mime === 'application/pdf' ||\n    mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||\n    mime === 'application/vnd.openxmlformats-officedocument.presentationml.presentation' ||\n    mime === 'application/msword' ||\n    mime === 'application/vnd.ms-powerpoint') {\n  return [{ json: { ...items[0].json, route: 'mineru', source: 'drive', fileId, fileName, modifiedTime } }];\n}\nif (mime.startsWith('text/')) {\n  return [{ json: { ...items[0].json, route: 'text', source: 'drive', fileId, fileName, modifiedTime } }];\n}\nif (mime.startsWith('image/')) {\n  return [{ json: { ...items[0].json, route: 'image', source: 'drive', fileId, fileName, modifiedTime }, binary: items[0].binary }];\n}\nif (mime.startsWith('audio/')) {\n  return [{ json: { ...items[0].json, route: 'audio', source: 'drive', fileId, fileName, modifiedTime }, binary: items[0].binary }];\n}\nif (mime.startsWith('video/')) {\n  return [{ json: { ...items[0].json, route: 'video', source: 'drive', fileId, fileName, modifiedTime }, binary: items[0].binary }];\n}\nreturn [];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [360, -460],
-      "id": "3d983ef0-2b89-43c2-91ad-455327fd372a",
-      "name": "Route — Text/PDF"
+      "position": [220, 0],
+      "id": "a0010001-0003-4a00-b003-000000000003",
+      "name": "Code — MIME Route"
     },
     {
       "parameters": {
-        "jsCode": "const items = $input.all();\nreturn items.filter(item => {\n  const mime = item.json.mimeType || item.binary?.data?.mimeType || '';\n  return mime.startsWith('image/');\n});"
+        "jsCode": "const item = $input.first();\nif (item.json.route === 'mineru') return [item];\nreturn [];"
       },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [360, -180],
-      "id": "017f8eba-2f8a-43c3-a28e-a8aaec40895c",
+      "type": "n8n-nodes-base.code", "typeVersion": 2,
+      "position": [460, -400],
+      "id": "a0010001-0010-4a00-b010-000000000010",
+      "name": "Route — MinerU"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://mineru.net/api/v4/extract/task",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [
+          { "name": "Authorization", "value": "=Bearer {{ $vars.MINERU_API_KEY }}" },
+          { "name": "Content-Type", "value": "application/json" }
+        ]},
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={\n  \"url\": \"https://drive.google.com/uc?export=download&id={{ $json.fileId }}\",\n  \"model_version\": \"vlm\",\n  \"output_format\": \"markdown\"\n}"
+      },
+      "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2,
+      "position": [700, -400],
+      "id": "a0010001-0011-4a00-b011-000000000011",
+      "name": "HTTP — MinerU Submit"
+    },
+    {
+      "parameters": { "amount": 15, "unit": "seconds" },
+      "type": "n8n-nodes-base.wait", "typeVersion": 1.1,
+      "position": [920, -400],
+      "id": "a0010001-0012-4a00-b012-000000000012",
+      "name": "Wait — MinerU"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://mineru.net/api/v4/extract/task/{{ $('HTTP — MinerU Submit').item.json.data.task_id }}",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [
+          { "name": "Authorization", "value": "=Bearer {{ $vars.MINERU_API_KEY }}" }
+        ]}
+      },
+      "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2,
+      "position": [1140, -400],
+      "id": "a0010001-0013-4a00-b013-000000000013",
+      "name": "HTTP — MinerU Poll"
+    },
+    {
+      "parameters": {
+        "jsCode": "const state = $json.state || $json.data?.state || '';\nif (state === 'done') {\n  const mdUrl = $json.data?.markdown_url || $json.data?.full_zip_url || '';\n  return [{ json: { ...($('Code — MIME Route').item.json), mineruState: 'done', markdownUrl: mdUrl } }];\n}\n// not done yet — return empty to stop (connect Wait node for retry)\nreturn [];"
+      },
+      "type": "n8n-nodes-base.code", "typeVersion": 2,
+      "position": [1360, -400],
+      "id": "a0010001-0014-4a00-b014-000000000014",
+      "name": "Code — MinerU Check Done"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.markdownUrl }}"
+      },
+      "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2,
+      "position": [1580, -400],
+      "id": "a0010001-0015-4a00-b015-000000000015",
+      "name": "HTTP — Download Markdown"
+    },
+    {
+      "parameters": {
+        "jsCode": "const md = typeof $json === 'string' ? $json : ($json.data || $json.body || '');\nconst prev = $('Code — MIME Route').item.json;\nreturn [{ json: {\n  content: md,\n  media_type: 'text',\n  source: prev.source || 'drive',\n  fileId: prev.fileId || '',\n  fileName: prev.fileName || '',\n  modifiedTime: prev.modifiedTime || '',\n  parsed_by: 'mineru'\n}}];"
+      },
+      "type": "n8n-nodes-base.code", "typeVersion": 2,
+      "position": [1800, -400],
+      "id": "a0010001-0016-4a00-b016-000000000016",
+      "name": "Set — MinerU Content"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\nif (item.json.route === 'text') return [{ json: { content: '', media_type: 'text', source: item.json.source, fileId: item.json.fileId, fileName: item.json.fileName, modifiedTime: item.json.modifiedTime, parsed_by: 'passthrough' }, binary: item.binary }];\nreturn [];"
+      },
+      "type": "n8n-nodes-base.code", "typeVersion": 2,
+      "position": [460, -200],
+      "id": "a0010001-0020-4a00-b020-000000000020",
+      "name": "Route — Text"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\nif (item.json.route === 'image') return [item];\nreturn [];"
+      },
+      "type": "n8n-nodes-base.code", "typeVersion": 2,
+      "position": [460, 0],
+      "id": "a0010001-0030-4a00-b030-000000000030",
       "name": "Route — Image"
-    },
-    {
-      "parameters": {
-        "jsCode": "const items = $input.all();\nreturn items.filter(item => {\n  const mime = item.json.mimeType || item.binary?.data?.mimeType || '';\n  return mime.startsWith('audio/');\n});"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [360, 100],
-      "id": "30588fe4-90be-486e-85b0-f322eac171ce",
-      "name": "Route — Audio"
-    },
-    {
-      "parameters": {
-        "jsCode": "const items = $input.all();\nreturn items.filter(item => {\n  const mime = item.json.mimeType || item.binary?.data?.mimeType || '';\n  return mime.startsWith('video/');\n});"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [360, 380],
-      "id": "004edd9b-b478-429a-a2c1-4c510f284a97",
-      "name": "Route — Video"
-    },
-    {
-      "parameters": {
-        "mode": "insert",
-        "pineconeIndex": {
-          "__rl": true,
-          "value": "n8n",
-          "mode": "id"
-        },
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
-      "typeVersion": 1.3,
-      "position": [1140, -460],
-      "id": "e18d8137-d102-48bb-b4ac-382cc00d5efd",
-      "name": "Pinecone Vector Store — Text",
-      "credentials": {
-        "pineconeApi": {
-          "id": "PINECONE_CREDENTIAL_ID",
-          "name": "PineconeApi account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "dataType": "binary",
-        "options": {
-          "metadata": {
-            "metadataValues": [
-              { "name": "source", "value": "drive" },
-              { "name": "media_type", "value": "text" },
-              { "name": "title", "value": "={{ $('Download File').item.json.name }}" },
-              { "name": "doc_id", "value": "={{ $('Download File').item.json.id }}" }
-            ]
-          }
-        }
-      },
-      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
-      "typeVersion": 1.1,
-      "position": [1140, -280],
-      "id": "f734b58a-789e-46fb-b6cf-306e6fb7ab8a",
-      "name": "Default Data Loader — Text"
-    },
-    {
-      "parameters": { "chunkSize": 500, "chunkOverlap": 50, "options": {} },
-      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
-      "typeVersion": 1,
-      "position": [1140, -100],
-      "id": "76147889-5a79-4e64-9701-22c575a4ff66",
-      "name": "Text Splitter — Text"
-    },
-    {
-      "parameters": { "options": {} },
-      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
-      "typeVersion": 1,
-      "position": [1140, -640],
-      "id": "001c668f-df61-4d5b-a86f-3d5911505095",
-      "name": "Embeddings OpenAI — Text",
-      "credentials": {
-        "openAIApi": { "id": "OPENAI_CREDENTIAL_ID", "name": "OpenAI account" }
-      }
     },
     {
       "parameters": {
@@ -162,238 +141,188 @@
         "nodeCredentialType": "openAIApi",
         "sendBody": true,
         "contentType": "json",
-        "body": "={\n  \"model\": \"gpt-4o\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"Describe this image in detail. Include any text visible in the image (OCR). Output in the same language as any text found, defaulting to Traditional Chinese.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": [\n        {\n          \"type\": \"image_url\",\n          \"image_url\": {\n            \"url\": \"data:{{ $json.mimeType || $binary.data.mimeType }};base64,{{ $binary.data.base64 }}\"\n          }\n        }\n      ]\n    }\n  ],\n  \"max_tokens\": 2048\n}"
+        "body": "={\n  \"model\": \"gpt-4o\",\n  \"messages\": [\n    { \"role\": \"system\", \"content\": \"Describe this image in detail. Include any text visible (OCR). Output in Traditional Chinese.\" },\n    { \"role\": \"user\", \"content\": [{ \"type\": \"image_url\", \"image_url\": { \"url\": \"data:{{ $json.mimeType || $binary.data.mimeType }};base64,{{ $binary.data.base64 }}\" } }] }\n  ],\n  \"max_tokens\": 2048\n}"
       },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [620, -180],
-      "id": "af496b88-753a-4cfe-9448-ad79f59d3acf",
-      "name": "HTTP Request — OpenAI Vision",
-      "credentials": {
-        "openAIApi": { "id": "OPENAI_CREDENTIAL_ID", "name": "OpenAI account" }
-      }
+      "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2,
+      "position": [700, 0],
+      "id": "a0010001-0031-4a00-b031-000000000031",
+      "name": "HTTP — OpenAI Vision",
+      "credentials": { "openAIApi": { "id": "OPENAI_CREDENTIAL_ID", "name": "OpenAI account" } }
     },
     {
       "parameters": {
-        "mode": "manual",
-        "duplicateItem": false,
-        "assignments": {
-          "assignments": [
-            { "name": "content", "value": "={{ $json.choices[0].message.content }}", "type": "string" },
-            { "name": "media_type", "value": "image", "type": "string" },
-            { "name": "title", "value": "={{ $('Download File').item.json.name }}", "type": "string" },
-            { "name": "doc_id", "value": "={{ $('Download File').item.json.id }}", "type": "string" }
-          ]
-        },
-        "options": {}
+        "mode": "manual", "duplicateItem": false,
+        "assignments": { "assignments": [
+          { "name": "content", "value": "={{ $json.choices[0].message.content }}", "type": "string" },
+          { "name": "media_type", "value": "image", "type": "string" },
+          { "name": "source", "value": "drive", "type": "string" },
+          { "name": "fileId", "value": "={{ $('Code — MIME Route').item.json.fileId }}", "type": "string" },
+          { "name": "fileName", "value": "={{ $('Code — MIME Route').item.json.fileName }}", "type": "string" },
+          { "name": "modifiedTime", "value": "={{ $('Code — MIME Route').item.json.modifiedTime }}", "type": "string" }
+        ]}, "options": {}
       },
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [860, -180],
-      "id": "23d91058-70ed-4583-9b1c-4bea9e917765",
-      "name": "Set — Image as Text"
+      "type": "n8n-nodes-base.set", "typeVersion": 3.4,
+      "position": [920, 0],
+      "id": "a0010001-0032-4a00-b032-000000000032",
+      "name": "Set — Image Content"
     },
     {
       "parameters": {
-        "mode": "insert",
-        "pineconeIndex": { "__rl": true, "value": "n8n", "mode": "id" },
-        "options": {}
+        "jsCode": "const item = $input.first();\nif (item.json.route === 'audio') return [item];\nreturn [];"
       },
-      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
-      "typeVersion": 1.3,
-      "position": [1140, -10],
-      "id": "1b6faa72-e34d-46f0-9de5-37df59a998b2",
-      "name": "Pinecone Vector Store — Image",
-      "credentials": {
-        "pineconeApi": { "id": "PINECONE_CREDENTIAL_ID", "name": "PineconeApi account" }
-      }
+      "type": "n8n-nodes-base.code", "typeVersion": 2,
+      "position": [460, 200],
+      "id": "a0010001-0040-4a00-b040-000000000040",
+      "name": "Route — Audio"
     },
     {
       "parameters": {
-        "jsonMode": "expressionData",
-        "jsonData": "={{ $json.content }}",
-        "options": {
-          "metadata": {
-            "metadataValues": [
-              { "name": "source", "value": "drive" },
-              { "name": "media_type", "value": "image" },
-              { "name": "title", "value": "={{ $json.title }}" },
-              { "name": "doc_id", "value": "={{ $json.doc_id }}" }
-            ]
-          }
-        }
+        "method": "POST", "url": "https://api.openai.com/v1/audio/transcriptions",
+        "authentication": "predefinedCredentialType", "nodeCredentialType": "openAIApi",
+        "sendBody": true, "contentType": "multipart-form-data",
+        "bodyParameters": { "parameters": [
+          { "parameterType": "formBinaryData", "name": "file", "inputDataFieldName": "data" },
+          { "parameterType": "formData", "name": "model", "value": "whisper-1" },
+          { "parameterType": "formData", "name": "language", "value": "zh" },
+          { "parameterType": "formData", "name": "response_format", "value": "text" }
+        ]}
       },
-      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
-      "typeVersion": 1.1,
-      "position": [1140, 170],
-      "id": "f419e88f-4aa1-434a-84db-3137f97b8acd",
-      "name": "Default Data Loader — Image"
-    },
-    {
-      "parameters": { "chunkSize": 500, "chunkOverlap": 50, "options": {} },
-      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
-      "typeVersion": 1,
-      "position": [1140, 350],
-      "id": "6c34870c-7727-45a1-a267-9b91f44810b4",
-      "name": "Text Splitter — Image"
-    },
-    {
-      "parameters": { "options": {} },
-      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
-      "typeVersion": 1,
-      "position": [1140, -190],
-      "id": "8c3fc5c4-3297-4767-ba19-368d95088492",
-      "name": "Embeddings OpenAI — Image",
-      "credentials": {
-        "openAIApi": { "id": "OPENAI_CREDENTIAL_ID", "name": "OpenAI account" }
-      }
+      "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2,
+      "position": [700, 200],
+      "id": "a0010001-0041-4a00-b041-000000000041",
+      "name": "HTTP — Whisper Audio",
+      "credentials": { "openAIApi": { "id": "OPENAI_CREDENTIAL_ID", "name": "OpenAI account" } }
     },
     {
       "parameters": {
-        "method": "POST",
-        "url": "https://api.openai.com/v1/audio/transcriptions",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "openAIApi",
-        "sendBody": true,
-        "contentType": "multipart-form-data",
-        "bodyParameters": {
-          "parameters": [
-            { "parameterType": "formBinaryData", "name": "file", "inputDataFieldName": "data" },
-            { "parameterType": "formData", "name": "model", "value": "whisper-1" },
-            { "parameterType": "formData", "name": "language", "value": "zh" },
-            { "parameterType": "formData", "name": "response_format", "value": "text" }
-          ]
-        }
+        "mode": "manual", "duplicateItem": false,
+        "assignments": { "assignments": [
+          { "name": "content", "value": "={{ typeof $json === 'string' ? $json : ($json.text ?? '') }}", "type": "string" },
+          { "name": "media_type", "value": "audio", "type": "string" },
+          { "name": "source", "value": "drive", "type": "string" },
+          { "name": "fileId", "value": "={{ $('Code — MIME Route').item.json.fileId }}", "type": "string" },
+          { "name": "fileName", "value": "={{ $('Code — MIME Route').item.json.fileName }}", "type": "string" },
+          { "name": "modifiedTime", "value": "={{ $('Code — MIME Route').item.json.modifiedTime }}", "type": "string" }
+        ]}, "options": {}
       },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [620, 100],
-      "id": "f4be261f-5c69-4c7a-a0b9-2feab8f12e37",
-      "name": "HTTP Request — Whisper Audio",
-      "credentials": {
-        "openAIApi": { "id": "OPENAI_CREDENTIAL_ID", "name": "OpenAI account" }
-      }
+      "type": "n8n-nodes-base.set", "typeVersion": 3.4,
+      "position": [920, 200],
+      "id": "a0010001-0042-4a00-b042-000000000042",
+      "name": "Set — Audio Content"
     },
     {
       "parameters": {
-        "mode": "manual",
-        "duplicateItem": false,
-        "assignments": {
-          "assignments": [
-            { "name": "content", "value": "={{ typeof $json === 'string' ? $json : ($json.text ?? '') }}", "type": "string" },
-            { "name": "media_type", "value": "audio", "type": "string" },
-            { "name": "title", "value": "={{ $('Download File').item.json.name }}", "type": "string" },
-            { "name": "doc_id", "value": "={{ $('Download File').item.json.id }}", "type": "string" }
-          ]
-        },
-        "options": {}
+        "jsCode": "const item = $input.first();\nif (item.json.route === 'video') return [item];\nreturn [];"
       },
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [860, 100],
-      "id": "42c02aa5-a97e-4591-a720-fef30a71e754",
-      "name": "Set — Audio as Text"
+      "type": "n8n-nodes-base.code", "typeVersion": 2,
+      "position": [460, 400],
+      "id": "a0010001-0050-4a00-b050-000000000050",
+      "name": "Route — Video"
     },
     {
       "parameters": {
-        "mode": "insert",
-        "pineconeIndex": { "__rl": true, "value": "n8n", "mode": "id" },
-        "options": {}
+        "method": "POST", "url": "https://api.openai.com/v1/audio/transcriptions",
+        "authentication": "predefinedCredentialType", "nodeCredentialType": "openAIApi",
+        "sendBody": true, "contentType": "multipart-form-data",
+        "bodyParameters": { "parameters": [
+          { "parameterType": "formBinaryData", "name": "file", "inputDataFieldName": "data" },
+          { "parameterType": "formData", "name": "model", "value": "whisper-1" },
+          { "parameterType": "formData", "name": "language", "value": "zh" },
+          { "parameterType": "formData", "name": "response_format", "value": "text" }
+        ]}
       },
-      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
-      "typeVersion": 1.3,
-      "position": [1140, 270],
-      "id": "778ad730-7518-47e7-9832-6c9bd546a166",
-      "name": "Pinecone Vector Store — Audio",
-      "credentials": {
-        "pineconeApi": { "id": "PINECONE_CREDENTIAL_ID", "name": "PineconeApi account" }
-      }
+      "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2,
+      "position": [700, 400],
+      "id": "a0010001-0051-4a00-b051-000000000051",
+      "name": "HTTP — Whisper Video",
+      "credentials": { "openAIApi": { "id": "OPENAI_CREDENTIAL_ID", "name": "OpenAI account" } }
     },
     {
       "parameters": {
-        "jsonMode": "expressionData",
-        "jsonData": "={{ $json.content }}",
-        "options": {
-          "metadata": {
-            "metadataValues": [
-              { "name": "source", "value": "drive" },
-              { "name": "media_type", "value": "audio" },
-              { "name": "title", "value": "={{ $json.title }}" },
-              { "name": "doc_id", "value": "={{ $json.doc_id }}" }
-            ]
-          }
-        }
+        "mode": "manual", "duplicateItem": false,
+        "assignments": { "assignments": [
+          { "name": "content", "value": "={{ typeof $json === 'string' ? $json : ($json.text ?? '') }}", "type": "string" },
+          { "name": "media_type", "value": "video", "type": "string" },
+          { "name": "source", "value": "drive", "type": "string" },
+          { "name": "fileId", "value": "={{ $('Code — MIME Route').item.json.fileId }}", "type": "string" },
+          { "name": "fileName", "value": "={{ $('Code — MIME Route').item.json.fileName }}", "type": "string" },
+          { "name": "modifiedTime", "value": "={{ $('Code — MIME Route').item.json.modifiedTime }}", "type": "string" }
+        ]}, "options": {}
       },
-      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
-      "typeVersion": 1.1,
-      "position": [1140, 450],
-      "id": "c1161029-0b08-4ac6-82f0-0bfdee6462f6",
-      "name": "Default Data Loader — Audio"
+      "type": "n8n-nodes-base.set", "typeVersion": 3.4,
+      "position": [920, 400],
+      "id": "a0010001-0052-4a00-b052-000000000052",
+      "name": "Set — Video Content"
     },
     {
-      "parameters": { "chunkSize": 500, "chunkOverlap": 50, "options": {} },
-      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
-      "typeVersion": 1,
-      "position": [1140, 630],
-      "id": "050db0a3-26a3-4f0e-abec-6b7fbf330cb8",
-      "name": "Text Splitter — Audio"
-    },
-    {
-      "parameters": { "options": {} },
-      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
-      "typeVersion": 1,
-      "position": [1140, 90],
-      "id": "d649a42a-2217-40ad-81d1-fc321ce652ae",
-      "name": "Embeddings OpenAI — Audio",
-      "credentials": {
-        "openAIApi": { "id": "OPENAI_CREDENTIAL_ID", "name": "OpenAI account" }
-      }
+      "parameters": {
+        "jsCode": "// NQ1D Metadata Enrichment + Content Hash\nconst crypto = require('crypto');\nconst item = $input.first();\nconst content = item.json.content || '';\nconst source = item.json.source || 'drive';\nconst fileId = item.json.fileId || '';\nconst docId = `${source}_${fileId}`;\n\n// Source URL\nlet sourceUrl = '';\nif (source === 'drive') sourceUrl = `https://drive.google.com/file/d/${fileId}/view`;\nelse if (source === 'notion') sourceUrl = `https://notion.so/${fileId.replace(/-/g, '')}`;\n\n// Section hierarchy from markdown headings\nconst headings = [];\nfor (const line of content.split('\\n')) {\n  const m = line.match(/^(#{1,3})\\s+(.+)/);\n  if (m) headings.push(m[2].trim());\n}\nconst hierarchy = headings.join(' > ') || item.json.fileName || '';\n\n// Content hash for dedup\nconst contentHash = crypto.createHash('sha256').update(content).digest('hex').substring(0, 16);\n\nreturn [{ json: {\n  content,\n  doc_id: docId,\n  title: item.json.fileName || '',\n  source,\n  source_url: sourceUrl,\n  media_type: item.json.media_type || 'text',\n  section_hierarchy: hierarchy,\n  content_preview: content.substring(0, 200),\n  content_hash: contentHash,\n  indexed_at: $now.toISO(),\n  source_modified_at: item.json.modifiedTime || '',\n  language: 'zh-TW',\n  parsed_by: item.json.parsed_by || 'direct'\n}}];"
+      },
+      "type": "n8n-nodes-base.code", "typeVersion": 2,
+      "position": [2100, 0],
+      "id": "a0010001-0060-4a00-b060-000000000060",
+      "name": "Code — NQ1D Enrichment"
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.openai.com/v1/audio/transcriptions",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "openAIApi",
-        "sendBody": true,
-        "contentType": "multipart-form-data",
-        "bodyParameters": {
-          "parameters": [
-            { "parameterType": "formBinaryData", "name": "file", "inputDataFieldName": "data" },
-            { "parameterType": "formData", "name": "model", "value": "whisper-1" },
-            { "parameterType": "formData", "name": "language", "value": "zh" },
-            { "parameterType": "formData", "name": "response_format", "value": "text" }
-          ]
-        }
+        "url": "=https://{{ $vars.PINECONE_HOST }}/query",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [
+          { "name": "Api-Key", "value": "={{ $vars.PINECONE_API_KEY }}" },
+          { "name": "Content-Type", "value": "application/json" }
+        ]},
+        "sendBody": true, "contentType": "json",
+        "body": "={\n  \"vector\": {{ JSON.stringify(new Array(1536).fill(0)) }},\n  \"topK\": 1,\n  \"includeMetadata\": true,\n  \"filter\": { \"doc_id\": { \"$eq\": \"{{ $json.doc_id }}\" } }\n}"
       },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [620, 380],
-      "id": "7dc55730-d19e-475c-91f4-fa2c1e2e2c01",
-      "name": "HTTP Request — Whisper Video",
-      "credentials": {
-        "openAIApi": { "id": "OPENAI_CREDENTIAL_ID", "name": "OpenAI account" }
-      }
+      "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2,
+      "position": [2340, 0],
+      "id": "a0010001-0061-4a00-b061-000000000061",
+      "name": "HTTP — Pinecone Check Existing"
     },
     {
       "parameters": {
-        "mode": "manual",
-        "duplicateItem": false,
-        "assignments": {
-          "assignments": [
-            { "name": "content", "value": "={{ typeof $json === 'string' ? $json : ($json.text ?? '') }}", "type": "string" },
-            { "name": "media_type", "value": "video", "type": "string" },
-            { "name": "title", "value": "={{ $('Download File').item.json.name }}", "type": "string" },
-            { "name": "doc_id", "value": "={{ $('Download File').item.json.id }}", "type": "string" }
-          ]
-        },
-        "options": {}
+        "jsCode": "const matches = $json.matches || [];\nconst prev = $('Code — NQ1D Enrichment').item.json;\nconst currentHash = prev.content_hash;\n\nif (matches.length === 0) {\n  return [{ json: { ...prev, dedup_action: 'INDEX' } }];\n}\n\nconst existingHash = matches[0].metadata?.content_hash || '';\nif (existingHash === currentHash) {\n  return [{ json: { doc_id: prev.doc_id, dedup_action: 'SKIP', reason: 'content_hash unchanged' } }];\n}\n\nreturn [{ json: { ...prev, dedup_action: 'UPDATE' } }];"
       },
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [860, 380],
-      "id": "5c4d0964-1b55-4421-908e-b071536d6c49",
-      "name": "Set — Video as Text"
+      "type": "n8n-nodes-base.code", "typeVersion": 2,
+      "position": [2580, 0],
+      "id": "a0010001-0062-4a00-b062-000000000062",
+      "name": "Code — Dedup Decision"
+    },
+    {
+      "parameters": {
+        "jsCode": "const action = $json.dedup_action;\nif (action === 'SKIP') return [];\nreturn [$input.first()];"
+      },
+      "type": "n8n-nodes-base.code", "typeVersion": 2,
+      "position": [2800, 0],
+      "id": "a0010001-0063-4a00-b063-000000000063",
+      "name": "Code — Dedup Route"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Delete old vectors if UPDATE, then pass through\nif ($json.dedup_action === 'UPDATE') {\n  return [{ json: { ...($json), needsDelete: true } }];\n}\nreturn [{ json: { ...($json), needsDelete: false } }];"
+      },
+      "type": "n8n-nodes-base.code", "typeVersion": 2,
+      "position": [3020, -200],
+      "id": "a0010001-0064-4a00-b064-000000000064",
+      "name": "Code — Check Delete"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://{{ $vars.PINECONE_HOST }}/vectors/delete",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [
+          { "name": "Api-Key", "value": "={{ $vars.PINECONE_API_KEY }}" },
+          { "name": "Content-Type", "value": "application/json" }
+        ]},
+        "sendBody": true, "contentType": "json",
+        "body": "={\n  \"filter\": { \"doc_id\": { \"$eq\": \"{{ $json.doc_id }}\" } }\n}"
+      },
+      "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2,
+      "position": [3240, -200],
+      "id": "a0010001-0065-4a00-b065-000000000065",
+      "name": "HTTP — Pinecone Delete Old"
     },
     {
       "parameters": {
@@ -403,52 +332,54 @@
       },
       "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
       "typeVersion": 1.3,
-      "position": [1140, 550],
-      "id": "a1bb000a-54c1-4fa1-9701-82269ef33d1e",
-      "name": "Pinecone Vector Store — Video",
-      "credentials": {
-        "pineconeApi": { "id": "PINECONE_CREDENTIAL_ID", "name": "PineconeApi account" }
-      }
+      "position": [3460, 0],
+      "id": "a0010001-0070-4a00-b070-000000000070",
+      "name": "Pinecone — Upsert",
+      "credentials": { "pineconeApi": { "id": "PINECONE_CREDENTIAL_ID", "name": "PineconeApi account" } }
     },
     {
       "parameters": {
         "jsonMode": "expressionData",
         "jsonData": "={{ $json.content }}",
         "options": {
-          "metadata": {
-            "metadataValues": [
-              { "name": "source", "value": "drive" },
-              { "name": "media_type", "value": "video" },
-              { "name": "title", "value": "={{ $json.title }}" },
-              { "name": "doc_id", "value": "={{ $json.doc_id }}" }
-            ]
-          }
+          "metadata": { "metadataValues": [
+            { "name": "doc_id", "value": "={{ $json.doc_id }}" },
+            { "name": "title", "value": "={{ $json.title }}" },
+            { "name": "source", "value": "={{ $json.source }}" },
+            { "name": "source_url", "value": "={{ $json.source_url }}" },
+            { "name": "media_type", "value": "={{ $json.media_type }}" },
+            { "name": "section_hierarchy", "value": "={{ $json.section_hierarchy }}" },
+            { "name": "content_preview", "value": "={{ $json.content_preview }}" },
+            { "name": "content_hash", "value": "={{ $json.content_hash }}" },
+            { "name": "indexed_at", "value": "={{ $json.indexed_at }}" },
+            { "name": "source_modified_at", "value": "={{ $json.source_modified_at }}" },
+            { "name": "language", "value": "={{ $json.language }}" },
+            { "name": "parsed_by", "value": "={{ $json.parsed_by }}" }
+          ]}
         }
       },
       "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
       "typeVersion": 1.1,
-      "position": [1140, 730],
-      "id": "fad0a8c4-ce9d-4982-9a6d-1d2173b966a3",
-      "name": "Default Data Loader — Video"
+      "position": [3460, 200],
+      "id": "a0010001-0071-4a00-b071-000000000071",
+      "name": "Data Loader — Unified"
     },
     {
-      "parameters": { "chunkSize": 500, "chunkOverlap": 50, "options": {} },
-      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "parameters": { "chunkSize": 512, "chunkOverlap": 64, "options": {} },
+      "type": "@n8n/n8n-nodes-langchain.textSplitterTokenSplitter",
       "typeVersion": 1,
-      "position": [1140, 910],
-      "id": "46dbee00-7f20-46ea-a163-eed97539b3ae",
-      "name": "Text Splitter — Video"
+      "position": [3460, 400],
+      "id": "a0010001-0072-4a00-b072-000000000072",
+      "name": "Token Splitter"
     },
     {
-      "parameters": { "options": {} },
+      "parameters": { "model": "text-embedding-3-small", "options": {} },
       "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
       "typeVersion": 1,
-      "position": [1140, 370],
-      "id": "2c93572c-6d07-404b-b4f5-60d1fa01c474",
-      "name": "Embeddings OpenAI — Video",
-      "credentials": {
-        "openAIApi": { "id": "OPENAI_CREDENTIAL_ID", "name": "OpenAI account" }
-      }
+      "position": [3460, -200],
+      "id": "a0010001-0073-4a00-b073-000000000073",
+      "name": "Embeddings OpenAI",
+      "credentials": { "openAIApi": { "id": "OPENAI_CREDENTIAL_ID", "name": "OpenAI account" } }
     },
     {
       "parameters": {
@@ -456,200 +387,79 @@
         "databaseId": { "__rl": true, "value": "YOUR_NOTION_DATABASE_ID", "mode": "id" },
         "simple": false
       },
-      "type": "n8n-nodes-base.notionTrigger",
-      "typeVersion": 1,
-      "position": [-120, 1200],
-      "id": "833d3d76-13f3-4f42-9743-f399cb29ba96",
+      "type": "n8n-nodes-base.notionTrigger", "typeVersion": 1,
+      "position": [-200, 800],
+      "id": "a0010001-0080-4a00-b080-000000000080",
       "name": "Notion Trigger",
-      "credentials": {
-        "notionApi": { "id": "NOTION_CREDENTIAL_ID", "name": "Notion account" }
-      }
+      "credentials": { "notionApi": { "id": "NOTION_CREDENTIAL_ID", "name": "Notion account" } }
     },
     {
       "parameters": {
-        "resource": "block",
-        "operation": "getAll",
+        "resource": "block", "operation": "getAll",
         "blockId": { "__rl": true, "mode": "url", "value": "={{ $json.url }}" },
         "returnAll": true
       },
-      "type": "n8n-nodes-base.notion",
-      "typeVersion": 2.2,
-      "position": [120, 1200],
-      "id": "df8cbc90-956f-4850-bcd7-04242975509d",
-      "name": "Notion — Get Page Content",
-      "credentials": {
-        "notionApi": { "id": "NOTION_CREDENTIAL_ID", "name": "Notion account" }
-      }
+      "type": "n8n-nodes-base.notion", "typeVersion": 2.2,
+      "position": [0, 800],
+      "id": "a0010001-0081-4a00-b081-000000000081",
+      "name": "Notion — Get Blocks",
+      "credentials": { "notionApi": { "id": "NOTION_CREDENTIAL_ID", "name": "Notion account" } }
     },
     {
       "parameters": {
-        "jsCode": "const items = $input.all();\nfunction richTextToString(arr) {\n  if (!Array.isArray(arr)) return '';\n  return arr.map(rt => rt.plain_text ?? rt.text?.content ?? '').join('');\n}\nconst parts = [];\nfor (const item of items) {\n  const j = item.json || {};\n  const t = j.type;\n  if (!t) continue;\n  const block = j[t] || {};\n  if (Array.isArray(block.rich_text)) {\n    const s = richTextToString(block.rich_text).trim();\n    if (s) parts.push(s);\n    continue;\n  }\n  if (Array.isArray(block.title)) {\n    const s = richTextToString(block.title).trim();\n    if (s) parts.push(s);\n    continue;\n  }\n  if (Array.isArray(block.caption)) {\n    const s = richTextToString(block.caption).trim();\n    if (s) parts.push(s);\n    continue;\n  }\n}\nreturn [{ json: { concatenated_content: parts.join('\\n') } }];"
+        "jsCode": "const items = $input.all();\nfunction rt2s(arr) { if (!Array.isArray(arr)) return ''; return arr.map(r => r.plain_text ?? r.text?.content ?? '').join(''); }\nconst parts = [];\nfor (const item of items) {\n  const j = item.json || {}; const t = j.type; if (!t) continue;\n  const b = j[t] || {};\n  if (Array.isArray(b.rich_text)) { const s = rt2s(b.rich_text).trim(); if (s) parts.push(s); }\n  else if (Array.isArray(b.title)) { const s = rt2s(b.title).trim(); if (s) parts.push(s); }\n  else if (Array.isArray(b.caption)) { const s = rt2s(b.caption).trim(); if (s) parts.push(s); }\n}\nconst trigger = $('Notion Trigger').item.json;\nconst pageId = trigger.id || '';\nconst pageTitle = trigger.properties?.Name?.title?.[0]?.plain_text || trigger.properties?.Name?.title?.[0]?.text?.content || '';\nreturn [{ json: {\n  content: parts.join('\\n'),\n  media_type: 'text',\n  source: 'notion',\n  fileId: pageId,\n  fileName: pageTitle,\n  modifiedTime: trigger.last_edited_time || '',\n  parsed_by: 'notion_blocks'\n}}];"
       },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [360, 1200],
-      "id": "67e60d16-56ab-4eda-8660-81dc02cd23f0",
-      "name": "Code — Aggregate Notion Text"
-    },
-    {
-      "parameters": {
-        "mode": "insert",
-        "pineconeIndex": { "__rl": true, "value": "n8n", "mode": "id" },
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
-      "typeVersion": 1.3,
-      "position": [1140, 1200],
-      "id": "ea7b0036-7e42-431c-9768-f6926cdb4d4d",
-      "name": "Pinecone Vector Store — Notion",
-      "credentials": {
-        "pineconeApi": { "id": "PINECONE_CREDENTIAL_ID", "name": "PineconeApi account" }
-      }
-    },
-    {
-      "parameters": {
-        "jsonMode": "expressionData",
-        "jsonData": "={{ $json.concatenated_content }}",
-        "options": {
-          "metadata": {
-            "metadataValues": [
-              { "name": "source", "value": "notion" },
-              { "name": "media_type", "value": "text" },
-              { "name": "pageId", "value": "={{ $('Notion Trigger').item.json.id }}" },
-              { "name": "pageTitle", "value": "={{ $('Notion Trigger').item.json.properties.Name.title[0].plain_text || $('Notion Trigger').item.json.properties.Name.title[0].text.content }}" },
-              { "name": "createdTime", "value": "={{ $('Notion Trigger').item.json.created_time }}" }
-            ]
-          }
-        }
-      },
-      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
-      "typeVersion": 1.1,
-      "position": [1140, 1380],
-      "id": "3404cade-08b2-4e45-9f0d-8800e9416827",
-      "name": "Default Data Loader — Notion"
-    },
-    {
-      "parameters": { "chunkSize": 500, "chunkOverlap": 50, "options": {} },
-      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
-      "typeVersion": 1,
-      "position": [1140, 1560],
-      "id": "eef6905c-bfee-47ae-8e6e-4eebd05ba56f",
-      "name": "Text Splitter — Notion"
-    },
-    {
-      "parameters": { "options": {} },
-      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
-      "typeVersion": 1,
-      "position": [1140, 1020],
-      "id": "1a44626b-6c59-4f22-98cc-75f5206c3ffa",
-      "name": "Embeddings OpenAI — Notion",
-      "credentials": {
-        "openAIApi": { "id": "OPENAI_CREDENTIAL_ID", "name": "OpenAI account" }
-      }
+      "type": "n8n-nodes-base.code", "typeVersion": 2,
+      "position": [220, 800],
+      "id": "a0010001-0082-4a00-b082-000000000082",
+      "name": "Code — Aggregate Notion"
     }
   ],
   "pinData": {},
   "connections": {
-    "Google Drive Trigger": {
-      "main": [[{ "node": "Download File", "type": "main", "index": 0 }]]
-    },
-    "Download File": {
-      "main": [[
-        { "node": "Route — Text/PDF", "type": "main", "index": 0 },
-        { "node": "Route — Image", "type": "main", "index": 0 },
-        { "node": "Route — Audio", "type": "main", "index": 0 },
-        { "node": "Route — Video", "type": "main", "index": 0 }
-      ]]
-    },
-    "Route — Text/PDF": {
-      "main": [[{ "node": "Pinecone Vector Store — Text", "type": "main", "index": 0 }]]
-    },
-    "Default Data Loader — Text": {
-      "ai_document": [[{ "node": "Pinecone Vector Store — Text", "type": "ai_document", "index": 0 }]]
-    },
-    "Text Splitter — Text": {
-      "ai_textSplitter": [[{ "node": "Default Data Loader — Text", "type": "ai_textSplitter", "index": 0 }]]
-    },
-    "Embeddings OpenAI — Text": {
-      "ai_embedding": [[{ "node": "Pinecone Vector Store — Text", "type": "ai_embedding", "index": 0 }]]
-    },
-    "Route — Image": {
-      "main": [[{ "node": "HTTP Request — OpenAI Vision", "type": "main", "index": 0 }]]
-    },
-    "HTTP Request — OpenAI Vision": {
-      "main": [[{ "node": "Set — Image as Text", "type": "main", "index": 0 }]]
-    },
-    "Set — Image as Text": {
-      "main": [[{ "node": "Pinecone Vector Store — Image", "type": "main", "index": 0 }]]
-    },
-    "Default Data Loader — Image": {
-      "ai_document": [[{ "node": "Pinecone Vector Store — Image", "type": "ai_document", "index": 0 }]]
-    },
-    "Text Splitter — Image": {
-      "ai_textSplitter": [[{ "node": "Default Data Loader — Image", "type": "ai_textSplitter", "index": 0 }]]
-    },
-    "Embeddings OpenAI — Image": {
-      "ai_embedding": [[{ "node": "Pinecone Vector Store — Image", "type": "ai_embedding", "index": 0 }]]
-    },
-    "Route — Audio": {
-      "main": [[{ "node": "HTTP Request — Whisper Audio", "type": "main", "index": 0 }]]
-    },
-    "HTTP Request — Whisper Audio": {
-      "main": [[{ "node": "Set — Audio as Text", "type": "main", "index": 0 }]]
-    },
-    "Set — Audio as Text": {
-      "main": [[{ "node": "Pinecone Vector Store — Audio", "type": "main", "index": 0 }]]
-    },
-    "Default Data Loader — Audio": {
-      "ai_document": [[{ "node": "Pinecone Vector Store — Audio", "type": "ai_document", "index": 0 }]]
-    },
-    "Text Splitter — Audio": {
-      "ai_textSplitter": [[{ "node": "Default Data Loader — Audio", "type": "ai_textSplitter", "index": 0 }]]
-    },
-    "Embeddings OpenAI — Audio": {
-      "ai_embedding": [[{ "node": "Pinecone Vector Store — Audio", "type": "ai_embedding", "index": 0 }]]
-    },
-    "Route — Video": {
-      "main": [[{ "node": "HTTP Request — Whisper Video", "type": "main", "index": 0 }]]
-    },
-    "HTTP Request — Whisper Video": {
-      "main": [[{ "node": "Set — Video as Text", "type": "main", "index": 0 }]]
-    },
-    "Set — Video as Text": {
-      "main": [[{ "node": "Pinecone Vector Store — Video", "type": "main", "index": 0 }]]
-    },
-    "Default Data Loader — Video": {
-      "ai_document": [[{ "node": "Pinecone Vector Store — Video", "type": "ai_document", "index": 0 }]]
-    },
-    "Text Splitter — Video": {
-      "ai_textSplitter": [[{ "node": "Default Data Loader — Video", "type": "ai_textSplitter", "index": 0 }]]
-    },
-    "Embeddings OpenAI — Video": {
-      "ai_embedding": [[{ "node": "Pinecone Vector Store — Video", "type": "ai_embedding", "index": 0 }]]
-    },
-    "Notion Trigger": {
-      "main": [[{ "node": "Notion — Get Page Content", "type": "main", "index": 0 }]]
-    },
-    "Notion — Get Page Content": {
-      "main": [[{ "node": "Code — Aggregate Notion Text", "type": "main", "index": 0 }]]
-    },
-    "Code — Aggregate Notion Text": {
-      "main": [[{ "node": "Pinecone Vector Store — Notion", "type": "main", "index": 0 }]]
-    },
-    "Default Data Loader — Notion": {
-      "ai_document": [[{ "node": "Pinecone Vector Store — Notion", "type": "ai_document", "index": 0 }]]
-    },
-    "Text Splitter — Notion": {
-      "ai_textSplitter": [[{ "node": "Default Data Loader — Notion", "type": "ai_textSplitter", "index": 0 }]]
-    },
-    "Embeddings OpenAI — Notion": {
-      "ai_embedding": [[{ "node": "Pinecone Vector Store — Notion", "type": "ai_embedding", "index": 0 }]]
-    }
+    "Google Drive Trigger": { "main": [[{ "node": "Download File", "type": "main", "index": 0 }]] },
+    "Download File": { "main": [[{ "node": "Code — MIME Route", "type": "main", "index": 0 }]] },
+    "Code — MIME Route": { "main": [[
+      { "node": "Route — MinerU", "type": "main", "index": 0 },
+      { "node": "Route — Text", "type": "main", "index": 0 },
+      { "node": "Route — Image", "type": "main", "index": 0 },
+      { "node": "Route — Audio", "type": "main", "index": 0 },
+      { "node": "Route — Video", "type": "main", "index": 0 }
+    ]] },
+    "Route — MinerU": { "main": [[{ "node": "HTTP — MinerU Submit", "type": "main", "index": 0 }]] },
+    "HTTP — MinerU Submit": { "main": [[{ "node": "Wait — MinerU", "type": "main", "index": 0 }]] },
+    "Wait — MinerU": { "main": [[{ "node": "HTTP — MinerU Poll", "type": "main", "index": 0 }]] },
+    "HTTP — MinerU Poll": { "main": [[{ "node": "Code — MinerU Check Done", "type": "main", "index": 0 }]] },
+    "Code — MinerU Check Done": { "main": [[{ "node": "HTTP — Download Markdown", "type": "main", "index": 0 }]] },
+    "HTTP — Download Markdown": { "main": [[{ "node": "Set — MinerU Content", "type": "main", "index": 0 }]] },
+    "Set — MinerU Content": { "main": [[{ "node": "Code — NQ1D Enrichment", "type": "main", "index": 0 }]] },
+    "Route — Text": { "main": [[{ "node": "Code — NQ1D Enrichment", "type": "main", "index": 0 }]] },
+    "Route — Image": { "main": [[{ "node": "HTTP — OpenAI Vision", "type": "main", "index": 0 }]] },
+    "HTTP — OpenAI Vision": { "main": [[{ "node": "Set — Image Content", "type": "main", "index": 0 }]] },
+    "Set — Image Content": { "main": [[{ "node": "Code — NQ1D Enrichment", "type": "main", "index": 0 }]] },
+    "Route — Audio": { "main": [[{ "node": "HTTP — Whisper Audio", "type": "main", "index": 0 }]] },
+    "HTTP — Whisper Audio": { "main": [[{ "node": "Set — Audio Content", "type": "main", "index": 0 }]] },
+    "Set — Audio Content": { "main": [[{ "node": "Code — NQ1D Enrichment", "type": "main", "index": 0 }]] },
+    "Route — Video": { "main": [[{ "node": "HTTP — Whisper Video", "type": "main", "index": 0 }]] },
+    "HTTP — Whisper Video": { "main": [[{ "node": "Set — Video Content", "type": "main", "index": 0 }]] },
+    "Set — Video Content": { "main": [[{ "node": "Code — NQ1D Enrichment", "type": "main", "index": 0 }]] },
+    "Code — NQ1D Enrichment": { "main": [[{ "node": "HTTP — Pinecone Check Existing", "type": "main", "index": 0 }]] },
+    "HTTP — Pinecone Check Existing": { "main": [[{ "node": "Code — Dedup Decision", "type": "main", "index": 0 }]] },
+    "Code — Dedup Decision": { "main": [[{ "node": "Code — Dedup Route", "type": "main", "index": 0 }]] },
+    "Code — Dedup Route": { "main": [[{ "node": "Code — Check Delete", "type": "main", "index": 0 }]] },
+    "Code — Check Delete": { "main": [[{ "node": "HTTP — Pinecone Delete Old", "type": "main", "index": 0 }]] },
+    "HTTP — Pinecone Delete Old": { "main": [[{ "node": "Pinecone — Upsert", "type": "main", "index": 0 }]] },
+    "Data Loader — Unified": { "ai_document": [[{ "node": "Pinecone — Upsert", "type": "ai_document", "index": 0 }]] },
+    "Token Splitter": { "ai_textSplitter": [[{ "node": "Data Loader — Unified", "type": "ai_textSplitter", "index": 0 }]] },
+    "Embeddings OpenAI": { "ai_embedding": [[{ "node": "Pinecone — Upsert", "type": "ai_embedding", "index": 0 }]] },
+    "Notion Trigger": { "main": [[{ "node": "Notion — Get Blocks", "type": "main", "index": 0 }]] },
+    "Notion — Get Blocks": { "main": [[{ "node": "Code — Aggregate Notion", "type": "main", "index": 0 }]] },
+    "Code — Aggregate Notion": { "main": [[{ "node": "Code — NQ1D Enrichment", "type": "main", "index": 0 }]] }
   },
   "active": false,
   "settings": { "executionOrder": "v1" },
-  "versionId": "0cad60a9-cada-4e47-b4e9-307cbac6d198",
+  "versionId": "enterprise-v1-flow-a",
   "meta": { "templateCredsSetupCompleted": true },
-  "id": "FlowAMultimodal01",
+  "id": "FlowAEnterprise01",
   "tags": []
 }
