@@ -18,7 +18,8 @@
             {"id": "2", "name": "customer", "value": "台積電", "type": "string"},
             {"id": "3", "name": "amount", "value": 1500000, "type": "number"},
             {"id": "4", "name": "stage", "value": "提案中", "type": "string"},
-            {"id": "5", "name": "stockNo", "value": "2330", "type": "string"}
+            {"id": "5", "name": "stockNo", "value": "2330", "type": "string"},
+            {"id": "6", "name": "queryDate", "value": "20250301", "type": "string"}
           ]
         }
       },
@@ -47,7 +48,7 @@
         "queryParameters": {
           "parameters": [
             {"name": "response", "value": "json"},
-            {"name": "date", "value": "20250301"},
+            {"name": "date", "value": "={{ $json.queryDate }}"},
             {"name": "stockNo", "value": "={{ $json.stockNo }}"}
           ]
         }
@@ -94,8 +95,8 @@
     },
     {
       "parameters": {
-        "content": "### Edit Fields\n準備銷售資料\n\n這筆資料會被後面\n三個節點共用：\n- GET 用 stockNo 查股價\n- POST 用全部欄位送 CRM\n\n→ 改這裡的值\n→ 後面全部跟著變",
-        "height": 260, "width": 220, "color": 5
+        "content": "### Edit Fields\n準備銷售資料\n\n這筆資料被後面三個節點共用：\n- GET 用 stockNo + queryDate\n- POST 用全部欄位送 CRM\n\n**動手試試：**\nstockNo → 2317（鴻海）\nqueryDate → 20250201（2月）\n\n→ 改這裡，後面全跟著變",
+        "height": 300, "width": 220, "color": 5
       },
       "id": "33333333-0001-0001-0001-000000000010",
       "name": "Sticky Note0",
@@ -105,8 +106,8 @@
     },
     {
       "parameters": {
-        "content": "### GET — 讀取資料\n不改變伺服器，只是「問」\n\n台幣匯率：tw.rter.info\n→ 免費、免認證\n\n台積電股價：twse.com.tw\n→ stockNo 用 Expression\n→ `{{ $json.stockNo }}` = 2330",
-        "height": 260, "width": 240, "color": 6
+        "content": "### GET — 讀取資料\n台幣匯率：tw.rter.info\n台積電股價：twse.com.tw\n\n**TWSE API 參數：**\nstockNo = 股票代號\ndate = 月份（yyyyMM01）\n\n兩個都從 Edit Fields 取：\n`{{ $json.stockNo }}`\n`{{ $json.queryDate }}`\n\n**常見股票代號：**\n2330 台積電 / 2317 鴻海\n2454 聯發科 / 2308 台達電\n0050 元大台灣50 ETF",
+        "height": 380, "width": 240, "color": 6
       },
       "id": "33333333-0001-0001-0001-000000000006",
       "name": "Sticky Note1",
