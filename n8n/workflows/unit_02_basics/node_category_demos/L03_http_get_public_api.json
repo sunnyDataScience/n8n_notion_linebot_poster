@@ -23,7 +23,15 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date=20250301&stockNo=2330"
+        "url": "https://www.twse.com.tw/exchangeReport/STOCK_DAY",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {"name": "response", "value": "json"},
+            {"name": "date", "value": "20250301"},
+            {"name": "stockNo", "value": "2330"}
+          ]
+        }
       },
       "id": "33333333-0001-0001-0001-000000000003",
       "name": "GET — 台積電月成交資訊",
