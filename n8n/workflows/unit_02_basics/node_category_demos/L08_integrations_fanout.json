@@ -1,0 +1,50 @@
+{
+  "name": "L08 — 整合節點 Fan-out（同時通知多個服務）",
+  "nodes": [
+    {
+      "parameters": {"numberOfRecords": 1, "stageFilter": ["成交"]},
+      "id": "88888888-0001-0001-0001-000000000001",
+      "name": "Fake Sales",
+      "type": "n8n-nodes-fake-sales.fakeSales",
+      "typeVersion": 1,
+      "position": [200, 500]
+    },
+    {
+      "parameters": {"resource": "message", "operation": "post", "messageType": "text", "message": "=成交通知！\n業務：{{ $json.salesRep }}\n客戶：{{ $json.customer }}\n金額：${{ $json.amount }}", "channel": {"__rl": true, "value": "#sales-wins", "mode": "name"}},
+      "id": "88888888-0001-0001-0001-000000000002",
+      "name": "Slack — 通知業務群組",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [520, 380]
+    },
+    {
+      "parameters": {"method": "POST", "url": "https://httpbin.org/post", "sendBody": true, "contentType": "json", "specifyBody": "json", "jsonBody": "={ \"salesRep\": \"{{ $json.salesRep }}\", \"customer\": \"{{ $json.customer }}\", \"amount\": {{ $json.amount }}, \"action\": \"update_crm\" }"},
+      "id": "88888888-0001-0001-0001-000000000003",
+      "name": "HTTP — 更新 CRM",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [520, 620]
+    },
+    {
+      "parameters": {
+        "content": "## L08：整合節點 Fan-out\n### 一筆資料同時送到多個服務\n\n**學習目標：**\n1. 專用節點 vs HTTP Request 的差異\n2. Fan-out 模式（一進多出）\n3. 理解 Credential 在專用節點的角色\n\n**兩種整合方式：**\n- **Slack 節點**（專用）→ 選 Credential 就搞定\n- **HTTP Request**（萬用）→ 自己組 URL / Body\n\n**注意：** Slack 節點需要先設定 Credential\n沒設定會報錯，這是正常的！\n→ 重點是看「節點怎麼設定」\n→ HTTP Request 可以直接跑（httpbin 不需認證）\n\n**對應教材：** 06_API基礎概念.md 第 3、5 章",
+        "height": 480, "width": 520, "color": 4
+      },
+      "id": "88888888-0001-0001-0001-000000000004",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [80, -180]
+    }
+  ],
+  "connections": {
+    "Fake Sales": {"main": [[{"node": "Slack — 通知業務群組", "type": "main", "index": 0}, {"node": "HTTP — 更新 CRM", "type": "main", "index": 0}]]}
+  },
+  "pinData": {
+    "Fake Sales": [{"json": {"id": 5, "salesRep": "張家豪", "department": "中小企業部", "region": "北區", "customer": "矽谷數位科技", "product": "DevOps 自動化工具組", "amount": 900000, "stage": "成交", "probability": 100}}]
+  },
+  "active": false,
+  "settings": {"executionOrder": "v1"},
+  "meta": {"templateCredsSetupCompleted": true},
+  "tags": []
+}

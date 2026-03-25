@@ -1,0 +1,120 @@
+{
+  "name": "L03 — HTTP Request（用 httpbin 看懂請求與回應）",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "33333333-0001-0001-0001-000000000001",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [200, 400]
+    },
+    {
+      "parameters": {
+        "numberOfRecords": 1
+      },
+      "id": "33333333-0001-0001-0001-000000000002",
+      "name": "Fake Sales",
+      "type": "n8n-nodes-fake-sales.fakeSales",
+      "typeVersion": 1,
+      "position": [440, 400]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://httpbin.org/get",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {"name": "customer", "value": "={{ $json.customer }}"},
+            {"name": "amount", "value": "={{ $json.amount }}"},
+            {"name": "stage", "value": "={{ $json.stage }}"}
+          ]
+        }
+      },
+      "id": "33333333-0001-0001-0001-000000000003",
+      "name": "HTTP GET — 帶 Query 參數",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [700, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://httpbin.org/post",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={ \"dealId\": \"DEAL-{{ $now.toFormat(\"yyyyMMddHHmmss\") }}\", \"salesRep\": \"{{ $json.salesRep }}\", \"customer\": \"{{ $json.customer }}\", \"amount\": {{ $json.amount }}, \"stage\": \"{{ $json.stage }}\" }"
+      },
+      "id": "33333333-0001-0001-0001-000000000004",
+      "name": "HTTP POST — 送出 JSON Body",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [700, 540]
+    },
+    {
+      "parameters": {
+        "content": "## L03：HTTP Request\n### 用 httpbin 看懂「請求」與「回應」\n\n**學習目標：**\n1. GET vs POST 的差異\n2. Query 參數 vs Body 的差異\n3. 用 Fake Sales 的資料當作送出的內容\n4. 看懂 httpbin 回傳的「回音」\n\n**httpbin.org 是什麼？**\n一個「回音壁」測試 API — 你送什麼，它就回什麼。\n不需要認證，非常適合學習。\n\n**兩條路徑：**\n- 上方 GET：把 Fake Sales 資料放在 URL 參數裡\n- 下方 POST：把 Fake Sales 資料放在 Body 裡\n\n**觀察重點：**\n1. 點 GET 的 Output → 看 `args` 欄位（你傳的參數）\n2. 點 POST 的 Output → 看 `json` 欄位（你傳的 Body）\n3. 比較兩者差異：GET 參數在 URL，POST 參數在 Body\n\n**對應教材：** 06_API基礎概念.md 第 6 章 HTTP 請求",
+        "height": 580, "width": 540, "color": 4
+      },
+      "id": "33333333-0001-0001-0001-000000000005",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [80, -240]
+    },
+    {
+      "parameters": {
+        "content": "### GET 請求\n\n參數放在 URL 後面：\n`?customer=台積電&amount=1500000`\n\n適合「查詢」用\n不會改變伺服器的資料\n\n→ 看 Output 的 `args`\n→ 你傳的參數在這裡",
+        "height": 300, "width": 240, "color": 6
+      },
+      "id": "33333333-0001-0001-0001-000000000006",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [600, 60]
+    },
+    {
+      "parameters": {
+        "content": "### POST 請求\n\n資料放在 Body 裡面：\n```json\n{\n  \"customer\": \"台積電\",\n  \"amount\": 1500000\n}\n```\n\n適合「新增 / 修改」用\n會改變伺服器的資料\n\n→ 看 Output 的 `json`\n→ 你傳的 Body 在這裡",
+        "height": 340, "width": 240, "color": 3
+      },
+      "id": "33333333-0001-0001-0001-000000000007",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [600, 360]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [[{"node": "Fake Sales", "type": "main", "index": 0}]]
+    },
+    "Fake Sales": {
+      "main": [[
+        {"node": "HTTP GET — 帶 Query 參數", "type": "main", "index": 0},
+        {"node": "HTTP POST — 送出 JSON Body", "type": "main", "index": 0}
+      ]]
+    }
+  },
+  "pinData": {
+    "Fake Sales": [
+      {
+        "json": {
+          "id": 6, "salesRep": "林志明", "department": "企業方案部", "region": "北區",
+          "customer": "台積電", "industry": "半導體", "contact": "劉資深經理",
+          "product": "資安防護旗艦方案", "category": "資安方案",
+          "unitPrice": 1500000, "quantity": 1, "amount": 1500000,
+          "stage": "提案中", "probability": 25,
+          "createdDate": "2025-02-15", "expectedCloseDate": "2025-08-30",
+          "notes": "需通過資安委員會審核"
+        }
+      }
+    ]
+  },
+  "active": false,
+  "settings": {"executionOrder": "v1"},
+  "meta": {"templateCredsSetupCompleted": true},
+  "tags": []
+}

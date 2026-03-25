@@ -1,0 +1,57 @@
+{
+  "name": "L06 — 資料轉換（Set + Code + Summarize）",
+  "nodes": [
+    {
+      "parameters": {"numberOfRecords": 5, "regionFilter": ["北區"]},
+      "id": "66666666-0001-0001-0001-000000000001",
+      "name": "Fake Sales",
+      "type": "n8n-nodes-fake-sales.fakeSales",
+      "typeVersion": 1,
+      "position": [200, 400]
+    },
+    {
+      "parameters": {"mode": "manual", "includeOtherFields": true, "assignments": {"assignments": [{"id": "1", "name": "weightedAmount", "value": "={{ Math.round($json.amount * ($json.probability / 100)) }}", "type": "number"}, {"id": "2", "name": "commission", "value": "={{ Math.round($json.amount * ($json.probability / 100) * 0.05) }}", "type": "number"}]}},
+      "id": "66666666-0001-0001-0001-000000000002",
+      "name": "Set — 計算加權與佣金",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [460, 400]
+    },
+    {
+      "parameters": {"mode": "runOnceForAllItems", "jsCode": "const items = $input.all();\nconst totalAmount = items.reduce((s, i) => s + i.json.amount, 0);\nconst totalWeighted = items.reduce((s, i) => s + i.json.weightedAmount, 0);\nconst totalCommission = items.reduce((s, i) => s + i.json.commission, 0);\nconst byRep = {};\nitems.forEach(i => { const rep = i.json.salesRep; if (!byRep[rep]) byRep[rep] = { deals: 0, amount: 0 }; byRep[rep].deals++; byRep[rep].amount += i.json.amount; });\nconst lines = items.map(i => `${i.json.customer}  $${i.json.amount.toLocaleString()}  [${i.json.stage}]`);\nconst repLines = Object.entries(byRep).map(([rep, d]) => `${rep}：${d.deals} 筆`);\nconst report = ['== Pipeline 報表 ==', `商機：${items.length} 筆`, `總額：$${totalAmount.toLocaleString()}`, `加權：$${totalWeighted.toLocaleString()}`, `佣金：$${totalCommission.toLocaleString()}`, '-- 業務 --', ...repLines, '-- 明細 --', ...lines].join('\\n');\nreturn [{ json: { totalDeals: items.length, totalAmount, totalWeighted, totalCommission, report }}];"},
+      "id": "66666666-0001-0001-0001-000000000003",
+      "name": "Code — 彙總報表",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [720, 400]
+    },
+    {
+      "parameters": {
+        "content": "## L06：資料轉換\n### Set（加欄位）→ Code（彙總）\n\n**學習目標：**\n1. Set 節點：用 Expression 新增計算欄位\n2. Code 節點：用 JS 做複雜彙總\n3. 觀察 output 數量變化：5 → 5 → 1\n\n**計算邏輯：**\n- 加權金額 = amount × probability%\n- 佣金 = 加權金額 × 5%\n\n**對應教材：** 06b_資料格式.md 第 2 章 JSON",
+        "height": 380, "width": 500, "color": 4
+      },
+      "id": "66666666-0001-0001-0001-000000000004",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [80, -120]
+    }
+  ],
+  "connections": {
+    "Fake Sales": {"main": [[{"node": "Set — 計算加權與佣金", "type": "main", "index": 0}]]},
+    "Set — 計算加權與佣金": {"main": [[{"node": "Code — 彙總報表", "type": "main", "index": 0}]]}
+  },
+  "pinData": {
+    "Fake Sales": [
+      {"json": {"id": 1, "salesRep": "林志明", "region": "北區", "customer": "鴻海精密工業", "product": "企業雲端方案 Pro", "amount": 640000, "stage": "提案中", "probability": 30}},
+      {"json": {"id": 3, "salesRep": "陳建宏", "region": "北區", "customer": "國泰世華銀行", "product": "AI 風控分析平台", "amount": 980000, "stage": "報價中", "probability": 60}},
+      {"json": {"id": 5, "salesRep": "張家豪", "region": "北區", "customer": "矽谷數位科技", "product": "DevOps 自動化工具組", "amount": 900000, "stage": "成交", "probability": 100}},
+      {"json": {"id": 6, "salesRep": "林志明", "region": "北區", "customer": "台積電", "product": "資安防護旗艦方案", "amount": 1500000, "stage": "提案中", "probability": 25}},
+      {"json": {"id": 13, "salesRep": "林志明", "region": "北區", "customer": "華碩電腦", "product": "企業雲端方案 Pro", "amount": 1280000, "stage": "報價中", "probability": 50}}
+    ]
+  },
+  "active": false,
+  "settings": {"executionOrder": "v1"},
+  "meta": {"templateCredsSetupCompleted": true},
+  "tags": []
+}

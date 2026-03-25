@@ -1,0 +1,183 @@
+{
+  "name": "L02 — JSON 資料流（看懂節點之間的資料）",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "22222222-0001-0001-0001-000000000001",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [200, 400]
+    },
+    {
+      "parameters": {
+        "numberOfRecords": 3
+      },
+      "id": "22222222-0001-0001-0001-000000000002",
+      "name": "Fake Sales",
+      "type": "n8n-nodes-fake-sales.fakeSales",
+      "typeVersion": 1,
+      "position": [440, 400]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": true,
+        "assignments": {
+          "assignments": [
+            {"id": "1", "name": "weightedAmount", "value": "={{ Math.round($json.amount * $json.probability / 100) }}", "type": "number"},
+            {"id": "2", "name": "dealSummary", "value": "={{ $json.salesRep }} — {{ $json.customer }} — ${{ $json.amount }}", "type": "string"},
+            {"id": "3", "name": "isHighValue", "value": "={{ $json.amount >= 1000000 }}", "type": "boolean"}
+          ]
+        }
+      },
+      "id": "22222222-0001-0001-0001-000000000003",
+      "name": "Edit Fields — 加工計算",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [700, 400]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "leftValue": "={{ $json.isHighValue }}",
+              "operator": {"type": "boolean", "operation": "true", "singleValue": true}
+            }
+          ],
+          "combinator": "and",
+          "options": {"version": 1, "leftValue": "", "caseSensitive": true, "typeValidation": "strict"}
+        }
+      },
+      "id": "22222222-0001-0001-0001-000000000004",
+      "name": "IF — 高價值商機？",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [960, 400]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": true,
+        "assignments": {
+          "assignments": [
+            {"id": "1", "name": "tag", "value": "重點客戶 — 需主管關注", "type": "string"}
+          ]
+        }
+      },
+      "id": "22222222-0001-0001-0001-000000000005",
+      "name": "高價值 — 標記",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1220, 320]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": true,
+        "assignments": {
+          "assignments": [
+            {"id": "1", "name": "tag", "value": "一般商機", "type": "string"}
+          ]
+        }
+      },
+      "id": "22222222-0001-0001-0001-000000000006",
+      "name": "一般 — 標記",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1220, 480]
+    },
+    {
+      "parameters": {
+        "content": "## L02：JSON 資料流\n### 看懂節點之間傳了什麼\n\n**學習目標：**\n1. 理解 JSON 的 key-value 結構\n2. 學會用 Expression 取值和計算\n3. 看懂資料怎麼從 A 節點流到 B 節點\n4. 觀察「多筆資料」怎麼流動（3 筆同時跑）\n\n**Fake Sales 欄位說明：**\n```\nid          → 商機編號\nsalesRep    → 業務姓名\ncustomer    → 客戶公司\namount      → 金額（TWD）\nprobability → 成交機率（%）\nstage       → 階段\nregion      → 區域\ncategory    → 產品類別\n```\n\n**動手試試：**\n1. 執行 Workflow\n2. 點 Fake Sales 節點 → 看 3 筆資料的 JSON\n3. 點 Edit Fields → 看新增的 weightedAmount 怎麼算出來的\n4. 點 IF → 看資料怎麼分成兩路\n5. 改 pinData 的 amount，觀察分流變化",
+        "height": 560, "width": 520, "color": 4
+      },
+      "id": "22222222-0001-0001-0001-000000000007",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [80, -220]
+    },
+    {
+      "parameters": {
+        "content": "### Expression 語法\n\n文字組合：\n`{{ $json.salesRep }} — {{ $json.customer }}`\n→ \"林志明 — 鴻海精密工業\"\n\n數學運算：\n`{{ $json.amount * $json.probability / 100 }}`\n→ 加權金額\n\n判斷：\n`{{ $json.amount >= 1000000 }}`\n→ true / false\n\n每一個 `{{ }}` 裡面\n都可以寫 JavaScript",
+        "height": 380, "width": 240, "color": 3
+      },
+      "id": "22222222-0001-0001-0001-000000000008",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [600, 140]
+    },
+    {
+      "parameters": {
+        "content": "### 觀察重點\n\nFake Sales 輸出 3 筆\n→ Edit Fields 也輸出 3 筆\n→ IF 分成兩路\n\n每筆資料獨立判斷\n高價值和一般各走各的路\n\n這就是 n8n 的\n「逐筆處理」機制",
+        "height": 300, "width": 220, "color": 5
+      },
+      "id": "22222222-0001-0001-0001-000000000009",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [860, 140]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [[{"node": "Fake Sales", "type": "main", "index": 0}]]
+    },
+    "Fake Sales": {
+      "main": [[{"node": "Edit Fields — 加工計算", "type": "main", "index": 0}]]
+    },
+    "Edit Fields — 加工計算": {
+      "main": [[{"node": "IF — 高價值商機？", "type": "main", "index": 0}]]
+    },
+    "IF — 高價值商機？": {
+      "main": [
+        [{"node": "高價值 — 標記", "type": "main", "index": 0}],
+        [{"node": "一般 — 標記", "type": "main", "index": 0}]
+      ]
+    }
+  },
+  "pinData": {
+    "Fake Sales": [
+      {
+        "json": {
+          "id": 6, "salesRep": "林志明", "department": "企業方案部", "region": "北區",
+          "customer": "台積電", "industry": "半導體", "contact": "劉資深經理",
+          "product": "資安防護旗艦方案", "category": "資安方案",
+          "unitPrice": 1500000, "quantity": 1, "amount": 1500000,
+          "stage": "提案中", "probability": 25,
+          "createdDate": "2025-02-15", "expectedCloseDate": "2025-08-30",
+          "notes": "需通過資安委員會審核"
+        }
+      },
+      {
+        "json": {
+          "id": 10, "salesRep": "張家豪", "department": "中小企業部", "region": "北區",
+          "customer": "悠遊卡公司", "industry": "電子支付", "contact": "林處長",
+          "product": "API 整合閘道", "category": "開發工具",
+          "unitPrice": 180000, "quantity": 1, "amount": 180000,
+          "stage": "成交", "probability": 100,
+          "createdDate": "2024-10-25", "expectedCloseDate": "2025-01-31",
+          "notes": "已上線運作中"
+        }
+      },
+      {
+        "json": {
+          "id": 16, "salesRep": "王美玲", "department": "中小企業部", "region": "中區",
+          "customer": "巨大機械（捷安特）", "industry": "機械製造", "contact": "劉廠長",
+          "product": "智慧工廠監控系統", "category": "IoT 方案",
+          "unitPrice": 350000, "quantity": 4, "amount": 1400000,
+          "stage": "報價中", "probability": 65,
+          "createdDate": "2025-01-10", "expectedCloseDate": "2025-05-15",
+          "notes": "已在一條產線試運行，效果良好"
+        }
+      }
+    ]
+  },
+  "active": false,
+  "settings": {"executionOrder": "v1"},
+  "meta": {"templateCredsSetupCompleted": true},
+  "tags": []
+}
