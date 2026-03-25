@@ -25,7 +25,7 @@
       "id": "33333333-0001-0001-0001-000000000002",
       "name": "HTTP GET — 帶 Query 參數",
       "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
+      "typeVersion": 4.2,
       "position": [480, 300]
     },
     {
@@ -40,7 +40,7 @@
       "id": "33333333-0001-0001-0001-000000000003",
       "name": "HTTP POST — 送出 JSON Body",
       "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
+      "typeVersion": 4.2,
       "position": [480, 540]
     },
     {

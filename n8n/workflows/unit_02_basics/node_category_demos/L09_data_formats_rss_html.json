@@ -17,7 +17,7 @@
       "id": "99999999-0001-0001-0001-000000000002",
       "name": "HTTP — 抓 RSS Feed",
       "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
+      "typeVersion": 4.2,
       "position": [460, 300]
     },
     {
@@ -28,7 +28,7 @@
       "id": "99999999-0001-0001-0001-000000000003",
       "name": "HTTP — JSON API 對比",
       "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
+      "typeVersion": 4.2,
       "position": [460, 540]
     },
     {
@@ -39,7 +39,7 @@
       "id": "99999999-0001-0001-0001-000000000004",
       "name": "HTTP — 抓 HTML 網頁",
       "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
+      "typeVersion": 4.2,
       "position": [460, 780]
     },
     {

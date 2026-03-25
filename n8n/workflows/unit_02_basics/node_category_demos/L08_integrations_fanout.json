@@ -22,7 +22,7 @@
       "id": "88888888-0001-0001-0001-000000000003",
       "name": "HTTP — 更新 CRM",
       "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
+      "typeVersion": 4.2,
       "position": [520, 620]
     },
     {
