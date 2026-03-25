@@ -45,7 +45,7 @@
     {
       "parameters": {
         "content": "## L09：資料格式實戰\n### RSS（XML）vs JSON vs HTML\n\n**學習目標：**\n1. 看懂 RSS/XML 的標籤結構（跟 JSON 對比）\n2. 看懂 HTML 的原始碼（為什麼不好解析）\n3. 理解「結構化」vs「非結構化」的差異\n\n**三條路徑：**\n- 上方：RSS Feed（XML 格式，結構化）\n- 中間：JSON API（對比用，最乾淨）\n- 下方：HTML 網頁（非結構化，資料混在排版裡）\n\n**對應教材：** 06b_資料格式與網頁結構.md\n\n**觀察重點：**\n1. 執行後，點開每個節點的 Output\n2. RSS/XML 有 `<title>` `<link>` 標籤\n3. JSON 有乾淨的 key-value\n4. HTML 有一堆 `<div>` `<p>` 排版標籤\n\n→ 你更喜歡處理哪種格式？",
-        "height": 540, "width": 540, "color": 4
+        "height": 420, "width": 540, "color": 4
       },
       "id": "99999999-0001-0001-0001-000000000005",
       "name": "Sticky Note",
@@ -56,35 +56,35 @@
     {
       "parameters": {
         "content": "### RSS (XML)\n結構化，但囉嗦\n\n```xml\n<item>\n  <title>文章標題</title>\n  <link>網址</link>\n</item>\n```\n\nn8n 會自動把 XML\n轉成 JSON 給你用",
-        "height": 280, "width": 220, "color": 6
+        "height": 180, "width": 220, "color": 6
       },
       "id": "99999999-0001-0001-0001-000000000006",
       "name": "Sticky Note1",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
-      "position": [360, 100]
+      "position": [360, 60]
     },
     {
       "parameters": {
         "content": "### JSON API\n結構化，最乾淨\n\n```json\n{\n  \"title\": \"文章標題\",\n  \"body\": \"內容\"\n}\n```\n\n程式最愛的格式\n不需要額外解析",
-        "height": 280, "width": 220, "color": 3
+        "height": 120, "width": 220, "color": 3
       },
       "id": "99999999-0001-0001-0001-000000000007",
       "name": "Sticky Note2",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
-      "position": [360, 380]
+      "position": [360, 360]
     },
     {
       "parameters": {
         "content": "### HTML 網頁\n非結構化，最難處理\n\n```html\n<div class=\"article\">\n  <h1>文章標題</h1>\n  <p>內容混在排版裡</p>\n</div>\n```\n\n資料藏在標籤裡\n需要用 CSS Selector 挖\n→ 這就是「爬蟲」",
-        "height": 300, "width": 220, "color": 5
+        "height": 100, "width": 220, "color": 5
       },
       "id": "99999999-0001-0001-0001-000000000008",
       "name": "Sticky Note3",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
-      "position": [360, 660]
+      "position": [360, 620]
     }
   ],
   "connections": {

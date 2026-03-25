@@ -55,7 +55,7 @@
     {
       "parameters": {
         "content": "## L04：三種 Trigger\n### 「誰」來啟動你的 Workflow？\n\n**學習目標：**\n1. 認識三種觸發方式的差異\n2. 理解 Fan-in 模式（多入口 → 一個處理）\n3. 體驗 Webhook 的「被動等通知」概念\n\n**三種觸發方式：**\n- **Manual** → 手動按鈕（開發測試）\n- **Schedule** → 定時執行（排程報表）\n- **Webhook** → 外部 POST 進來（CRM / LINE Bot）\n\n**對應教材：** 06_API基礎概念.md 第 8 章 Webhook\n\n**動手試試：**\n複製 Webhook URL → 用瀏覽器或 Postman 打看看",
-        "height": 480, "width": 520, "color": 4
+        "height": 420, "width": 520, "color": 4
       },
       "id": "44444444-0001-0001-0001-000000000006",
       "name": "Sticky Note",
