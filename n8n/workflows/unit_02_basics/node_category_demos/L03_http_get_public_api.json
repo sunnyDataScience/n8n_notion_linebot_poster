@@ -7,7 +7,26 @@
       "name": "Manual Trigger",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
-      "position": [200, 400]
+      "position": [200, 460]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {"id": "1", "name": "salesRep", "value": "林志明", "type": "string"},
+            {"id": "2", "name": "customer", "value": "台積電", "type": "string"},
+            {"id": "3", "name": "amount", "value": 1500000, "type": "number"},
+            {"id": "4", "name": "stage", "value": "提案中", "type": "string"},
+            {"id": "5", "name": "stockNo", "value": "2330", "type": "string"}
+          ]
+        }
+      },
+      "id": "33333333-0001-0001-0001-000000000009",
+      "name": "Edit Fields — 銷售資料",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [440, 460]
     },
     {
       "parameters": {
@@ -18,7 +37,7 @@
       "name": "GET — 台幣即時匯率",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [460, 260]
+      "position": [700, 260]
     },
     {
       "parameters": {
@@ -29,7 +48,7 @@
           "parameters": [
             {"name": "response", "value": "json"},
             {"name": "date", "value": "20250301"},
-            {"name": "stockNo", "value": "2330"}
+            {"name": "stockNo", "value": "={{ $json.stockNo }}"}
           ]
         }
       },
@@ -37,7 +56,7 @@
       "name": "GET — 台積電月成交資訊",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [460, 460]
+      "position": [700, 460]
     },
     {
       "parameters": {
@@ -60,12 +79,12 @@
       "name": "POST — 送出銷售資料到 CRM",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [460, 660]
+      "position": [700, 660]
     },
     {
       "parameters": {
-        "content": "## L03：HTTP Request 實戰\n### 查台灣公開資料 + POST 到 CRM\n\n**學習目標：**\n1. GET = 「讀取」資料（不需要認證的公開 API）\n2. POST = 「送出」資料（模擬寫入 CRM）\n3. 看懂 API 回傳的 JSON 結構\n\n**三條路徑（全部不需要認證）：**\n\n| 路徑 | Method | 來源 | 說明 |\n|------|--------|------|------|\n| 上 | GET | tw.rter.info | 台幣即時匯率（USD/JPY/EUR） |\n| 中 | GET | twse.com.tw | 台積電 2330 月成交資訊 |\n| 下 | POST | httpbin.org | 用 pinData 銷售資料模擬送出 |\n\n**觀察重點：**\n1. GET 匯率 → 看回傳的 JSON 結構（巢狀物件）\n2. GET 台積電 → 看回傳的 data 陣列（表格資料）\n3. POST → 看 httpbin 回音（確認你送了什麼）\n\n**對應教材：**\n- 06_API基礎概念.md 第 3、6 章（API + HTTP）\n- 06b_資料格式.md 第 2 章（JSON）\n\n**延伸思考：**\n這些公開 API 不需要認證就能用\n但 Slack、Google Sheets 等服務需要 → 見 L07",
-        "height": 600, "width": 540, "color": 4
+        "content": "## L03：HTTP Request 實戰\n### 查台灣公開資料 + POST 到 CRM\n\n**學習目標：**\n1. GET = 「讀取」資料（免認證公開 API）\n2. POST = 「送出」資料（模擬寫入 CRM）\n3. 看懂 API 回傳的 JSON 結構\n4. Expression `{{ $json.xxx }}` 取上游資料\n\n**流程：**\n```\nManual Trigger\n  → Edit Fields（準備銷售資料）\n    ├→ GET 台幣匯率\n    ├→ GET 台積電股價（stockNo 來自上游）\n    └→ POST 銷售資料到 httpbin\n```\n\n**動手試試：**\n- 改 Edit Fields 的 stockNo → 2317（鴻海）\n- 改 customer → 鴻海精密工業\n- 重新執行，看結果變化\n\n**對應教材：** 06_API基礎概念.md 第 3、6 章",
+        "height": 520, "width": 500, "color": 4
       },
       "id": "33333333-0001-0001-0001-000000000005",
       "name": "Sticky Note",
@@ -75,40 +94,54 @@
     },
     {
       "parameters": {
-        "content": "### GET — 讀取資料\n不改變伺服器，只是「問」\n\n台幣匯率 API：\n`tw.rter.info/capi.php`\n→ 回傳 USD、JPY、EUR 對台幣\n→ 免費、免認證、即時更新\n\n台積電股價 API：\n`twse.com.tw/exchangeReport/...`\n→ 台灣證券交易所官方資料\n→ 回傳當月每日成交資訊",
-        "height": 300, "width": 240, "color": 6
+        "content": "### Edit Fields\n準備銷售資料\n\n這筆資料會被後面\n三個節點共用：\n- GET 用 stockNo 查股價\n- POST 用全部欄位送 CRM\n\n→ 改這裡的值\n→ 後面全部跟著變",
+        "height": 260, "width": 220, "color": 5
+      },
+      "id": "33333333-0001-0001-0001-000000000010",
+      "name": "Sticky Note0",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [350, 140]
+    },
+    {
+      "parameters": {
+        "content": "### GET — 讀取資料\n不改變伺服器，只是「問」\n\n台幣匯率：tw.rter.info\n→ 免費、免認證\n\n台積電股價：twse.com.tw\n→ stockNo 用 Expression\n→ `{{ $json.stockNo }}` = 2330",
+        "height": 260, "width": 240, "color": 6
       },
       "id": "33333333-0001-0001-0001-000000000006",
       "name": "Sticky Note1",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
-      "position": [120, 120]
+      "position": [600, -200]
     },
     {
       "parameters": {
-        "content": "### POST — 送出資料\n會「改變」伺服器的資料\n\nhttpbin 是回音壁：\n你 POST 什麼，它就回什麼\n\n實際場景：\n- POST 到 CRM 建立商機\n- POST 到 Slack 發通知\n- POST 到 Google Sheets 寫資料\n\n→ 看 Output 的 `json` 欄位\n→ 確認你送出的銷售資料",
-        "height": 300, "width": 240, "color": 3
+        "content": "### POST — 送出資料\nhttpbin 是回音壁\n\n看 Output 的 `form` 欄位：\nsalesRep = 林志明\ncustomer = 台積電\namount = 1500000\n\n→ 確認上游資料有帶過來",
+        "height": 240, "width": 240, "color": 3
       },
       "id": "33333333-0001-0001-0001-000000000007",
       "name": "Sticky Note2",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
-      "position": [120, 520]
+      "position": [600, 840]
     },
     {
       "parameters": {
-        "content": "### 台灣常用公開 API\n\n**免認證：**\n- tw.rter.info（匯率）\n- twse.com.tw（股市）\n- data.gov.tw（政府開放資料）\n\n**需 API Key：**\n- 中央氣象署（天氣預報）\n- 環境部（空氣品質）\n- 交通部 PTX（公車/高鐵）\n\n→ 需要 Key 的見 L07 教學",
-        "height": 280, "width": 240, "color": 5
+        "content": "### 台灣常用公開 API\n\n**免認證：**\n- tw.rter.info（匯率）\n- twse.com.tw（股市）\n- data.gov.tw（政府開放資料）\n\n**需 API Key：**\n- 中央氣象署（天氣）\n- 環境部（空氣品質）\n- 交通部 PTX（公車/高鐵）\n\n→ 需要 Key 的見 L07",
+        "height": 280, "width": 240, "color": 2
       },
       "id": "33333333-0001-0001-0001-000000000008",
       "name": "Sticky Note3",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
-      "position": [120, 860]
+      "position": [200, 700]
     }
   ],
   "connections": {
     "Manual Trigger": {
+      "main": [[{"node": "Edit Fields — 銷售資料", "type": "main", "index": 0}]]
+    },
+    "Edit Fields — 銷售資料": {
       "main": [[
         {"node": "GET — 台幣即時匯率", "type": "main", "index": 0},
         {"node": "GET — 台積電月成交資訊", "type": "main", "index": 0},
@@ -116,25 +149,7 @@
       ]]
     }
   },
-  "pinData": {
-    "Manual Trigger": [
-      {
-        "json": {
-          "id": 6,
-          "salesRep": "林志明",
-          "department": "企業方案部",
-          "region": "北區",
-          "customer": "台積電",
-          "industry": "半導體",
-          "product": "資安防護旗艦方案",
-          "amount": 1500000,
-          "stage": "提案中",
-          "probability": 25,
-          "_hint": "這筆資料會被 POST 節點送出，而 GET 節點會查詢台積電的真實股價資料"
-        }
-      }
-    ]
-  },
+  "pinData": {},
   "active": false,
   "settings": {"executionOrder": "v1"},
   "meta": {"templateCredsSetupCompleted": true},
