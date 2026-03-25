@@ -1,5 +1,5 @@
 {
-  "name": "Demo 6 — Observability (出餐紀錄+客訴)",
+  "name": "Demo 6 — Observability (Pipeline 監控+逾期警報)",
   "nodes": [
     {
       "parameters": {},
@@ -35,20 +35,20 @@
             {
               "id": "1",
               "name": "action",
-              "value": "通知店長 + 寫入日誌資料庫",
+              "value": "通知業務主管 + 寫入錯誤日誌",
               "type": "string"
             },
             {
               "id": "2",
               "name": "notifyChannel",
-              "value": "#incidents",
+              "value": "#sales-alerts",
               "type": "string"
             }
           ]
         }
       },
       "id": "d06c3a18-15e4-43b5-aa40-ec9d8e1ce771",
-      "name": "Set — 格式化客訴記錄",
+      "name": "Set — 格式化異常記錄",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
@@ -57,10 +57,12 @@
       ]
     },
     {
-      "parameters": {},
+      "parameters": {
+        "numberOfRecords": 5
+      },
       "id": "893b5702-0ad5-4a63-a51d-3778fab05a7c",
-      "name": "Manual Trigger",
-      "type": "n8n-nodes-base.manualTrigger",
+      "name": "Fake Sales",
+      "type": "n8n-nodes-fake-sales.fakeSales",
       "typeVersion": 1,
       "position": [
         200,
@@ -70,10 +72,10 @@
     {
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "const item = $json;\nconst prepMin = (item.prepTimeMs / 60000).toFixed(1);\nconst slaLimit = 5; // minutes\nconst sla = parseFloat(prepMin) <= slaLimit ? 'PASS' : 'SLA_BREACH';\n\nreturn [{ json: {\n  type: 'COMPLETION',\n  orderId: item.orderId,\n  item: item.item,\n  customer: item.customer,\n  prepTime: `${prepMin} 分鐘`,\n  slaLimit: `${slaLimit} 分鐘`,\n  slaStatus: sla,\n  alertNeeded: sla === 'SLA_BREACH',\n  timestamp: $now.toISO()\n}}];"
+        "jsCode": "const items = $input.all();\nconst today = new Date();\n\nreturn items.map(i => {\n  const deal = i.json;\n  const closeDate = new Date(deal.expectedCloseDate);\n  const daysRemaining = Math.ceil((closeDate - today) / (1000 * 60 * 60 * 24));\n  const isOverdue = daysRemaining < 0;\n  const status = isOverdue ? 'OVERDUE' : (daysRemaining <= 14 ? 'URGENT' : 'ON_TRACK');\n\n  return { json: {\n    ...deal,\n    type: 'DEAL_MONITOR',\n    daysRemaining,\n    isOverdue,\n    status,\n    alertNeeded: isOverdue || daysRemaining <= 14,\n    timestamp: $now.toISO()\n  }};\n});"
       },
       "id": "77ddf085-fee7-48ef-a8a1-518a40814457",
-      "name": "Code — 計算出餐時間 + SLA",
+      "name": "Code — 計算到期天數 + 狀態",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -93,11 +95,18 @@
               },
               "rightValue": ""
             }
-          ]
+          ],
+          "combinator": "and",
+          "options": {
+            "version": 1,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          }
         }
       },
-      "id": "if-sla",
-      "name": "IF — SLA 超時？",
+      "id": "ae4c466d-e25b-433e-9f51-9d4b3487fca4",
+      "name": "IF — 需要警報？",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
@@ -114,14 +123,14 @@
             {
               "id": "1",
               "name": "alertAction",
-              "value": "立即通知店長：出餐超時！",
+              "value": "=緊急：{{ $json.customer }} 的商機{{ $json.isOverdue ? '已逾期' : '即將到期' }}，請立即跟進！",
               "type": "string"
             }
           ]
         }
       },
-      "id": "set-alert",
-      "name": "Set — 發送超時警報",
+      "id": "dd5b6bbd-955b-426f-9744-7e2d2c123e96",
+      "name": "Set — 發送逾期警報",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
@@ -138,13 +147,13 @@
             {
               "id": "1",
               "name": "alertAction",
-              "value": "正常記錄，無需警報",
+              "value": "正常追蹤，無需警報",
               "type": "string"
             }
           ]
         }
       },
-      "id": "set-ok",
+      "id": "84d9d9cf-faa8-4e2c-890e-54f7c302da70",
       "name": "Set — 正常記錄",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
@@ -155,12 +164,12 @@
     },
     {
       "parameters": {
-        "content": "## Demo 6：Observability 可觀測性節點\n### 比喻：「出餐紀錄 + 客訴系統」\n\n**核心概念：** 監控、記錄、警報\n\n**兩條路徑：**\n- **上方** → Error Trigger：其他 workflow 出錯自動觸發\n- **下方** → Manual Trigger：模擬出餐完成紀錄\n\n**教學重點：** Error Trigger 不需要手動啟動\n它在「其他 workflow」失敗時才會自動觸發",
+        "content": "## Demo 6：Observability 可觀測性節點\n### 比喻：「Pipeline 監控 + 逾期警報」\n\n**核心概念：** 監控、記錄、警報\n\n**兩條路徑：**\n- **上方** → Error Trigger：其他 workflow 出錯自動觸發\n- **下方** → Fake Sales：監控商機到期狀態\n\n**教學重點：** Error Trigger 不需要手動啟動\n它在「其他 workflow」失敗時才會自動觸發",
         "height": 300,
         "width": 800,
         "color": 4
       },
-      "id": "sticky-overview",
+      "id": "97fd086a-7000-40a9-9dd8-b9bd3adac3b5",
       "name": "Sticky Note",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
@@ -171,12 +180,12 @@
     },
     {
       "parameters": {
-        "content": "### 路徑 A：客訴系統 (Error Monitor)\n\n當其他 workflow 出錯時：\n1. Error Trigger 自動接收錯誤資訊\n2. Code 萃取 workflow 名稱、錯誤訊息\n3. Set 加上嚴重度 + 通知管道\n\n→ 實際可接 Notion / Slack 通知\n\n⚠️ 這裡的 pinData 模擬錯誤事件",
+        "content": "### 路徑 A：異常監控 (Error Monitor)\n\n當其他 workflow 出錯時：\n1. Error Trigger 自動接收錯誤資訊\n2. Code 萃取 workflow 名稱、錯誤訊息\n3. Set 加上嚴重度 + 通知管道\n\n→ 實際可接 Notion / Slack 通知\n\n⚠️ 這裡的 pinData 模擬錯誤事件",
         "height": 300,
         "width": 740,
         "color": 7
       },
-      "id": "sticky-error",
+      "id": "2454f83d-513e-4c6c-a97a-527dcf7eb2fd",
       "name": "Sticky Note1",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
@@ -187,12 +196,12 @@
     },
     {
       "parameters": {
-        "content": "### 路徑 B：出餐紀錄 (Audit Log + SLA)\n\n模擬訂單完成後：\n1. Manual Trigger 帶入完成訂單資料\n2. Code 計算出餐時間 + SLA 判定\n3. IF 判斷是否超時\n   - true → 發送超時警報\n   - false → 正常記錄\n\n**試試看：** 改 pinData 的 prepTimeMs\n- 180000 (3分鐘) → PASS\n- 600000 (10分鐘) → SLA_BREACH",
+        "content": "### 路徑 B：商機到期監控 (Deal SLA)\n\n從 Fake Sales 抓取商機後：\n1. Code 計算距離預計成交日的天數\n2. 判定狀態：OVERDUE / URGENT / ON_TRACK\n3. IF 判斷是否需要警報\n   - true → 發送逾期/緊急警報\n   - false → 正常記錄\n\n**試試看：** 改 pinData 的 expectedCloseDate\n- 過去日期 → OVERDUE\n- 14 天內 → URGENT\n- 14 天以上 → ON_TRACK",
         "height": 440,
         "width": 1000,
         "color": 2
       },
-      "id": "sticky-audit",
+      "id": "5b83e62b-1a0f-4fcb-9489-084d5ee33df4",
       "name": "Sticky Note2",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
@@ -218,40 +227,40 @@
       "main": [
         [
           {
-            "node": "Set — 格式化客訴記錄",
+            "node": "Set — 格式化異常記錄",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Manual Trigger": {
+    "Fake Sales": {
       "main": [
         [
           {
-            "node": "Code — 計算出餐時間 + SLA",
+            "node": "Code — 計算到期天數 + 狀態",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Code — 計算出餐時間 + SLA": {
+    "Code — 計算到期天數 + 狀態": {
       "main": [
         [
           {
-            "node": "IF — SLA 超時？",
+            "node": "IF — 需要警報？",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "IF — SLA 超時？": {
+    "IF — 需要警報？": {
       "main": [
         [
           {
-            "node": "Set — 發送超時警報",
+            "node": "Set — 發送逾期警報",
             "type": "main",
             "index": 0
           }
@@ -271,28 +280,109 @@
       {
         "json": {
           "workflow": {
-            "id": "123",
-            "name": "Flow B — LINE Bot"
+            "id": "456",
+            "name": "CRM 同步 Workflow"
           },
           "execution": {
-            "id": "99",
+            "id": "789",
             "error": {
-              "message": "抹茶拿鐵缺貨，無法完成訂單",
-              "stack": "Error: Out of stock..."
+              "message": "CRM API 回傳 403 Forbidden，Token 已過期",
+              "stack": "Error: Unauthorized access..."
             }
           },
           "_hint": "這是模擬其他 workflow 出錯時收到的資料"
         }
       }
     ],
-    "Manual Trigger": [
+    "Fake Sales": [
       {
         "json": {
-          "orderId": "ORD-20260323-001",
-          "item": "拿鐵",
-          "customer": "Alice",
-          "prepTimeMs": 180000,
-          "_hint": "試試改 prepTimeMs: 180000 (3分鐘=PASS) 或 600000 (10分鐘=BREACH)"
+          "id": 4,
+          "salesRep": "黃淑芬",
+          "department": "企業方案部",
+          "region": "南區",
+          "customer": "統一企業",
+          "industry": "食品零售",
+          "product": "全通路行銷平台",
+          "category": "行銷工具",
+          "amount": 816000,
+          "stage": "合約審核",
+          "probability": 80,
+          "createdDate": "2024-12-10",
+          "expectedCloseDate": "2025-03-31",
+          "notes": "法務已完成合約審閱，等待用印"
+        }
+      },
+      {
+        "json": {
+          "id": 9,
+          "salesRep": "黃淑芬",
+          "department": "企業方案部",
+          "region": "南區",
+          "customer": "長榮海運",
+          "industry": "物流運輸",
+          "product": "供應鏈管理系統",
+          "category": "IoT 方案",
+          "amount": 1260000,
+          "stage": "合約審核",
+          "probability": 75,
+          "createdDate": "2024-12-20",
+          "expectedCloseDate": "2025-04-15",
+          "notes": "技術驗證通過，進入採購流程"
+        }
+      },
+      {
+        "json": {
+          "id": 20,
+          "salesRep": "林志明",
+          "department": "企業方案部",
+          "region": "北區",
+          "customer": "聯發科技",
+          "industry": "半導體",
+          "product": "高效能運算叢集",
+          "category": "雲端服務",
+          "amount": 3200000,
+          "stage": "報價中",
+          "probability": 45,
+          "createdDate": "2025-01-05",
+          "expectedCloseDate": "2025-06-30",
+          "notes": "用於 AI 晶片設計模擬運算"
+        }
+      },
+      {
+        "json": {
+          "id": 34,
+          "salesRep": "林志明",
+          "department": "企業方案部",
+          "region": "北區",
+          "customer": "遠傳電信",
+          "industry": "電信服務",
+          "product": "5G 企業專網方案",
+          "category": "IoT 方案",
+          "amount": 4500000,
+          "stage": "需求確認",
+          "probability": 35,
+          "createdDate": "2025-03-01",
+          "expectedCloseDate": "2025-10-31",
+          "notes": "策略合作夥伴關係洽談中"
+        }
+      },
+      {
+        "json": {
+          "id": 47,
+          "salesRep": "張家豪",
+          "department": "中小企業部",
+          "region": "北區",
+          "customer": "Line Taiwan",
+          "industry": "軟體服務",
+          "product": "負載平衡解決方案",
+          "category": "雲端服務",
+          "amount": 1000000,
+          "stage": "合約審核",
+          "probability": 85,
+          "createdDate": "2025-01-05",
+          "expectedCloseDate": "2025-03-31",
+          "notes": "因應節慶流量高峰的擴展需求"
         }
       }
     ]

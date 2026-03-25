@@ -1,11 +1,13 @@
 {
-  "name": "Demo 2 — Control (內用還外帶？)",
+  "name": "Demo 2 — Control (金額大小決定審核層級)",
   "nodes": [
     {
-      "parameters": {},
+      "parameters": {
+        "numberOfRecords": 3
+      },
       "id": "f07f53b2-a70c-4e5f-8096-cdb5542b0474",
-      "name": "Manual Trigger",
-      "type": "n8n-nodes-base.manualTrigger",
+      "name": "Fake Sales",
+      "type": "n8n-nodes-fake-sales.fakeSales",
       "typeVersion": 1,
       "position": [
         200,
@@ -17,18 +19,25 @@
         "conditions": {
           "conditions": [
             {
-              "leftValue": "={{ $json.dineIn }}",
+              "leftValue": "={{ $json.amount }}",
               "operator": {
-                "type": "boolean",
-                "operation": "true"
+                "type": "number",
+                "operation": "gte"
               },
-              "rightValue": ""
+              "rightValue": 1000000
             }
-          ]
+          ],
+          "combinator": "and",
+          "options": {
+            "version": 1,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          }
         }
       },
       "id": "0afad300-d7e3-48b7-848a-54e70948785d",
-      "name": "IF — 內用還外帶？",
+      "name": "IF — 金額 ≥ 100 萬？",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
@@ -44,21 +53,21 @@
           "assignments": [
             {
               "id": "1",
-              "name": "serving",
-              "value": "瓷杯 + 托盤",
+              "name": "approvalLevel",
+              "value": "主管審核",
               "type": "string"
             },
             {
               "id": "2",
-              "name": "area",
-              "value": "5 號桌",
+              "name": "approver",
+              "value": "業務副總",
               "type": "string"
             }
           ]
         }
       },
       "id": "a7acefdc-706a-4cce-b376-ceb693a6ec7e",
-      "name": "內用準備",
+      "name": "需主管審核",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
@@ -74,21 +83,21 @@
           "assignments": [
             {
               "id": "1",
-              "name": "serving",
-              "value": "紙杯 + 紙袋",
+              "name": "approvalLevel",
+              "value": "業務自行報價",
               "type": "string"
             },
             {
               "id": "2",
-              "name": "pickupNumber",
-              "value": "={{ Math.floor(Math.random() * 100) + 1 }}",
-              "type": "number"
+              "name": "approver",
+              "value": "無需額外審核",
+              "type": "string"
             }
           ]
         }
       },
       "id": "4922a032-d23a-40c7-b309-a5a229d3e581",
-      "name": "外帶包裝",
+      "name": "業務自行報價",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
@@ -105,49 +114,65 @@
               "conditions": {
                 "conditions": [
                   {
-                    "leftValue": "={{ $json.size }}",
+                    "leftValue": "={{ $json.stage }}",
                     "operator": {
                       "type": "string",
                       "operation": "equals"
                     },
-                    "rightValue": "S"
+                    "rightValue": "提案中"
                   }
                 ]
               },
               "renameOutput": true,
-              "outputKey": "Small"
+              "outputKey": "提案中"
             },
             {
               "conditions": {
                 "conditions": [
                   {
-                    "leftValue": "={{ $json.size }}",
+                    "leftValue": "={{ $json.stage }}",
                     "operator": {
                       "type": "string",
                       "operation": "equals"
                     },
-                    "rightValue": "M"
+                    "rightValue": "報價中"
                   }
                 ]
               },
               "renameOutput": true,
-              "outputKey": "Medium"
+              "outputKey": "報價中"
             },
             {
               "conditions": {
                 "conditions": [
                   {
-                    "leftValue": "={{ $json.size }}",
+                    "leftValue": "={{ $json.stage }}",
                     "operator": {
                       "type": "string",
                       "operation": "equals"
                     },
-                    "rightValue": "L"
+                    "rightValue": "合約審核"
                   }
                 ]
               },
               "renameOutput": true,
-              "outputKey": "Large"
+              "outputKey": "合約審核"
+            },
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.stage }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "成交"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "成交"
             }
           ]
         },
@@ -156,7 +181,7 @@
         }
       },
       "id": "e5c4945a-abbd-4d07-8240-7c9fce37113a",
-      "name": "Switch — 選擇杯子大小",
+      "name": "Switch — 依成交階段路由",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.4,
       "position": [
@@ -172,21 +197,21 @@
           "assignments": [
             {
               "id": "1",
-              "name": "cup",
-              "value": "8oz 小杯",
+              "name": "action",
+              "value": "安排客戶拜訪",
               "type": "string"
             },
             {
               "id": "2",
-              "name": "price",
-              "value": 55,
-              "type": "number"
+              "name": "priority",
+              "value": "中",
+              "type": "string"
             }
           ]
         }
       },
       "id": "6d486059-e8a3-4b94-919e-8090807c42ee",
-      "name": "小杯 8oz",
+      "name": "提案中 → 安排拜訪",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
@@ -202,21 +227,21 @@
           "assignments": [
             {
               "id": "1",
-              "name": "cup",
-              "value": "12oz 中杯",
+              "name": "action",
+              "value": "準備報價單",
               "type": "string"
             },
             {
               "id": "2",
-              "name": "price",
-              "value": 75,
-              "type": "number"
+              "name": "priority",
+              "value": "高",
+              "type": "string"
             }
           ]
         }
       },
       "id": "6ed46560-40ac-425d-b1ed-4d2c77cbac63",
-      "name": "中杯 12oz",
+      "name": "報價中 → 準備報價單",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
@@ -232,21 +257,21 @@
           "assignments": [
             {
               "id": "1",
-              "name": "cup",
-              "value": "16oz 大杯",
+              "name": "action",
+              "value": "催促法務審約",
               "type": "string"
             },
             {
               "id": "2",
-              "name": "price",
-              "value": 95,
-              "type": "number"
+              "name": "priority",
+              "value": "緊急",
+              "type": "string"
             }
           ]
         }
       },
       "id": "cd8b7303-72e8-49e6-8038-14d03abc628b",
-      "name": "大杯 16oz",
+      "name": "合約審核 → 催促法務",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
@@ -256,12 +281,42 @@
     },
     {
       "parameters": {
-        "content": "## Demo 2：Control 控制節點\n### 比喻：「內用還外帶？」\n\n**核心概念：** 根據條件把資料送往不同路徑\n\n**兩種控制節點：**\n- **IF** → 2 條分支 (true / false)，二選一判斷\n- **Switch** → N 條分支 (多條規則)，多選一路由\n\n**試試看：** 修改 pinData 裡的 `dineIn` 和 `size` 值，觀察路徑變化",
+        "mode": "manual",
+        "includeOtherFields": true,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "action",
+              "value": "啟動交付流程",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "priority",
+              "value": "完成",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "name": "成交 → 啟動交付",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        740,
+        1060
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Demo 2：Control 控制節點\n### 比喻：「金額大小決定審核層級」\n\n**核心概念：** 根據條件把資料送往不同路徑\n\n**兩種控制節點：**\n- **IF** → 2 條分支 (true / false)，金額 ≥ 100 萬需主管審核\n- **Switch** → N 條分支，依成交階段路由不同後續動作\n\n**資料來源：** Fake Sales 節點產生業務銷售假資料",
         "height": 300,
         "width": 520,
         "color": 4
       },
-      "id": "sticky-overview",
+      "id": "dbbd6af3-d6f4-4b23-83b5-4d5d2c931751",
       "name": "Sticky Note",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
@@ -272,12 +327,12 @@
     },
     {
       "parameters": {
-        "content": "### IF 節點 — 二選一\n`dineIn === true` → 內用\n`dineIn === false` → 外帶\n\n上方輸出 = true (內用)\n下方輸出 = false (外帶)",
+        "content": "### IF 節點 — 二選一\n`amount >= 1,000,000` → 主管審核\n`amount < 1,000,000` → 業務自行報價\n\n上方輸出 = true (需主管)\n下方輸出 = false (自行報價)",
         "height": 460,
         "width": 500,
         "color": 6
       },
-      "id": "sticky-if",
+      "id": "7a995039-a86b-49ee-aa5d-16c3f7efa15e",
       "name": "Sticky Note1",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
@@ -288,12 +343,12 @@
     },
     {
       "parameters": {
-        "content": "### Switch 節點 — 多選一\n根據 `size` 欄位路由：\n\n- Output 0 → S → 小杯 8oz ($55)\n- Output 1 → M → 中杯 12oz ($75)\n- Output 2 → L → 大杯 16oz ($95)\n- Fallback → 未知尺寸",
-        "height": 480,
+        "content": "### Switch 節點 — 多選一\n根據 `stage` 欄位路由：\n\n- Output 0 → 提案中 → 安排客戶拜訪\n- Output 1 → 報價中 → 準備報價單\n- Output 2 → 合約審核 → 催促法務\n- Output 3 → 成交 → 啟動交付流程\n- Fallback → 需求確認（其他階段）",
+        "height": 580,
         "width": 500,
         "color": 3
       },
-      "id": "sticky-switch",
+      "id": "4f235dfe-cc93-4420-8278-0c51da5d161d",
       "name": "Sticky Note2",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
@@ -304,59 +359,66 @@
     }
   ],
   "connections": {
-    "Manual Trigger": {
+    "Fake Sales": {
       "main": [
         [
           {
-            "node": "IF — 內用還外帶？",
+            "node": "IF — 金額 ≥ 100 萬？",
             "type": "main",
             "index": 0
           },
           {
-            "node": "Switch — 選擇杯子大小",
+            "node": "Switch — 依成交階段路由",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "IF — 內用還外帶？": {
+    "IF — 金額 ≥ 100 萬？": {
       "main": [
         [
           {
-            "node": "內用準備",
+            "node": "需主管審核",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "外帶包裝",
+            "node": "業務自行報價",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Switch — 選擇杯子大小": {
+    "Switch — 依成交階段路由": {
       "main": [
         [
           {
-            "node": "小杯 8oz",
+            "node": "提案中 → 安排拜訪",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "中杯 12oz",
+            "node": "報價中 → 準備報價單",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "大杯 16oz",
+            "node": "合約審核 → 催促法務",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "成交 → 啟動交付",
             "type": "main",
             "index": 0
           }
@@ -365,15 +427,68 @@
     }
   },
   "pinData": {
-    "Manual Trigger": [
+    "Fake Sales": [
       {
         "json": {
-          "item": "拿鐵",
-          "qty": 2,
-          "dineIn": true,
-          "size": "L",
-          "customer": "Alice",
-          "_hint": "試試改 dineIn 為 false，或 size 改為 S / M"
+          "id": 6,
+          "salesRep": "林志明",
+          "department": "企業方案部",
+          "region": "北區",
+          "customer": "台積電",
+          "industry": "半導體",
+          "contact": "劉資深經理",
+          "product": "資安防護旗艦方案",
+          "category": "資安方案",
+          "unitPrice": 1500000,
+          "quantity": 1,
+          "amount": 1500000,
+          "stage": "提案中",
+          "probability": 25,
+          "createdDate": "2025-02-15",
+          "expectedCloseDate": "2025-08-30",
+          "notes": "需通過資安委員會審核"
+        }
+      },
+      {
+        "json": {
+          "id": 10,
+          "salesRep": "張家豪",
+          "department": "中小企業部",
+          "region": "北區",
+          "customer": "悠遊卡公司",
+          "industry": "電子支付",
+          "contact": "林處長",
+          "product": "API 整合閘道",
+          "category": "開發工具",
+          "unitPrice": 180000,
+          "quantity": 1,
+          "amount": 180000,
+          "stage": "成交",
+          "probability": 100,
+          "createdDate": "2024-10-25",
+          "expectedCloseDate": "2025-01-31",
+          "notes": "已上線運作中"
+        }
+      },
+      {
+        "json": {
+          "id": 16,
+          "salesRep": "王美玲",
+          "department": "中小企業部",
+          "region": "中區",
+          "customer": "巨大機械（捷安特）",
+          "industry": "機械製造",
+          "contact": "劉廠長",
+          "product": "智慧工廠監控系統",
+          "category": "IoT 方案",
+          "unitPrice": 350000,
+          "quantity": 4,
+          "amount": 1400000,
+          "stage": "報價中",
+          "probability": 65,
+          "createdDate": "2025-01-10",
+          "expectedCloseDate": "2025-05-15",
+          "notes": "已在一條產線試運行，效果良好"
         }
       }
     ]

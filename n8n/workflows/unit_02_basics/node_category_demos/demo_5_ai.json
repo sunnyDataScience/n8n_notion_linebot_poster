@@ -1,10 +1,10 @@
 {
-  "name": "Demo 5 — AI (AI 店員推薦餐點)",
+  "name": "Demo 5 — AI (AI 銷售顧問)",
   "nodes": [
     {
       "parameters": {},
       "id": "7faa53d2-85c7-4312-b229-554bc5ab5e4a",
-      "name": "Customer Chat",
+      "name": "Sales Chat",
       "type": "@n8n/n8n-nodes-langchain.manualChatTrigger",
       "typeVersion": 1.1,
       "position": [
@@ -16,11 +16,11 @@
       "parameters": {
         "promptType": "auto",
         "options": {
-          "systemMessage": "你是一間溫馨咖啡廳的友善店員。\n\n【菜單】\n飲料：\n- 拿鐵 $120（熱/冰）\n- 卡布奇諾 $110（僅熱）\n- 抹茶拿鐵 $130（熱/冰）\n- 熱巧克力 $100（僅熱）\n- 美式咖啡 $90（熱/冰）\n\n輕食：\n- 可頌 $80\n- 巧克力餅乾 $50\n- 起司蛋糕 $120\n- 提拉米蘇 $130\n\n【規則】\n1. 根據客人的口味偏好推薦 1-2 項\n2. 一定要附上價格\n3. 用親切的語氣\n4. 如果客人問非菜單問題，禮貌引導回點餐\n5. 用客人使用的語言回覆"
+          "systemMessage": "你是一位資深的 B2B 業務銷售顧問 AI 助理。\n\n【產品線】\n雲端服務：\n- 企業雲端方案 Pro $128,000/套\n- 私有雲基礎建設 $2,800,000/套\n- ERP 雲端升級方案 $280,000/套\n- 雲端備份解決方案 $95,000/套\n\nAI 解決方案：\n- AI 風控分析平台 $980,000\n- AI 客服機器人 $560,000\n- 大數據分析平台 $750,000\n- 推薦引擎系統 $480,000\n\nIoT 方案：\n- 智慧工廠監控系統 $350,000/套\n- 供應鏈管理系統 $420,000/套\n- 能源管理系統 $860,000/套\n\n資安方案：\n- 資安防護旗艦方案 $1,500,000\n\n【規則】\n1. 根據客戶的產業和需求推薦 1-3 項產品\n2. 一定要附上建議報價和預估導入時間\n3. 主動詢問客戶的預算範圍和痛點\n4. 如果客戶問非銷售問題，禮貌引導回產品諮詢\n5. 用客戶使用的語言回覆\n6. 提供競品比較優勢"
         }
       },
       "id": "41c78ad6-9470-4587-85b1-a23f2c41dc38",
-      "name": "AI Barista",
+      "name": "AI Sales Advisor",
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
@@ -36,7 +36,7 @@
           "value": "gpt-5-mini"
         },
         "options": {
-          "temperature": 0.8
+          "temperature": 0.7
         }
       },
       "id": "0c9d309a-da72-421d-80e1-5b36621c758a",
@@ -50,12 +50,12 @@
     },
     {
       "parameters": {
-        "content": "## Demo 5：AI / RAG 節點\n### 比喻：「AI 店員推薦餐點」\n\n**核心概念：** 用 LLM 處理自然語言\n\n```\nChat Trigger (客人說話)\n    ↓\nAI Agent (理解意圖 + 推薦)\n    ↑\nOpenAI Model (語言能力)\n```\n\n**試試這些問法：**\n- 「我想要甜的熱飲」\n- 「有什麼冰的？」\n- 「推薦一個下午茶套餐」\n- 「I want something with chocolate」",
+        "content": "## Demo 5：AI / RAG 節點\n### 比喻：「AI 銷售顧問」\n\n**核心概念：** 用 LLM 處理自然語言\n\n```\nChat Trigger (業務提問)\n    ↓\nAI Agent (分析需求 + 推薦產品)\n    ↑\nOpenAI Model (語言能力)\n```\n\n**試試這些問法：**\n- 「客戶是金融業，預算 100 萬以內」\n- 「製造業想做工廠數位轉型」\n- 「有沒有適合中小企業的方案？」\n- 「客戶擔心資安合規問題」",
         "height": 400,
         "width": 540,
         "color": 4
       },
-      "id": "sticky-overview",
+      "id": "3a37113e-9cab-4f7a-ab58-397300d0fe35",
       "name": "Sticky Note",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
@@ -66,12 +66,12 @@
     },
     {
       "parameters": {
-        "content": "### Chat Trigger\n提供對話介面\n\n在 n8n 裡直接打字測試\n不需要外部工具",
+        "content": "### Chat Trigger\n提供對話介面\n\n業務直接在 n8n 裡\n向 AI 諮詢銷售策略",
         "height": 280,
         "width": 220,
         "color": 6
       },
-      "id": "sticky-trigger",
+      "id": "23532577-9b99-460f-ad15-0fa01deb954e",
       "name": "Sticky Note1",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
@@ -82,12 +82,12 @@
     },
     {
       "parameters": {
-        "content": "### AI Agent\n核心推理引擎\n\n- System Prompt = 菜單 + 規則\n- 自動理解客人意圖\n- 可以接 Tool 查庫存\n\n**Sub-node 概念：**\nOpenAI Model 是 Agent 的\n「大腦」，掛在下方",
+        "content": "### AI Agent\n核心推理引擎\n\n- System Prompt = 產品線 + 規則\n- 自動理解客戶需求\n- 推薦最適合的方案\n\n**Sub-node 概念：**\nOpenAI Model 是 Agent 的\n「大腦」，掛在下方",
         "height": 400,
         "width": 260,
         "color": 3
       },
-      "id": "sticky-agent",
+      "id": "031bbb5a-69eb-40ca-bf84-3506d28bebcb",
       "name": "Sticky Note2",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
@@ -98,12 +98,12 @@
     },
     {
       "parameters": {
-        "content": "### OpenAI Model (Sub-node)\n語言模型設定\n\n- model: gpt-5-mini\n- temperature: 0.8 (較有創意)\n\n⚠️ 需要設定 OpenAI credential\n(API Key)",
+        "content": "### OpenAI Model (Sub-node)\n語言模型設定\n\n- model: gpt-5-mini\n- temperature: 0.7 (平衡精準與創意)\n\n⚠️ 需要設定 OpenAI credential\n(API Key)",
         "height": 300,
         "width": 260,
         "color": 5
       },
-      "id": "sticky-model",
+      "id": "05a34662-88ad-4783-a577-a50fa9dd8a43",
       "name": "Sticky Note3",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
@@ -114,11 +114,11 @@
     }
   ],
   "connections": {
-    "Customer Chat": {
+    "Sales Chat": {
       "main": [
         [
           {
-            "node": "AI Barista",
+            "node": "AI Sales Advisor",
             "type": "main",
             "index": 0
           }
@@ -129,7 +129,7 @@
       "ai_languageModel": [
         [
           {
-            "node": "AI Barista",
+            "node": "AI Sales Advisor",
             "type": "ai_languageModel",
             "index": 0
           }

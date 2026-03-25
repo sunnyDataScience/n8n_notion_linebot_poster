@@ -1,11 +1,14 @@
 {
-  "name": "Demo 4 — Integrations (通知廚房、叫外送員)",
+  "name": "Demo 4 — Integrations (通知業務主管、更新 CRM)",
   "nodes": [
     {
-      "parameters": {},
+      "parameters": {
+        "numberOfRecords": 1,
+        "stageFilter": ["成交"]
+      },
       "id": "95d87fff-185f-43f0-b17a-87d8995f4554",
-      "name": "Manual Trigger",
-      "type": "n8n-nodes-base.manualTrigger",
+      "name": "Fake Sales",
+      "type": "n8n-nodes-fake-sales.fakeSales",
       "typeVersion": 1,
       "position": [
         200,
@@ -16,13 +19,16 @@
       "parameters": {
         "resource": "message",
         "operation": "post",
-        "select": "byName",
-        "channelName": "#kitchen-orders",
         "messageType": "text",
-        "message": "=新訂單！\n品項：{{ $json.item }} x{{ $json.qty }}\n客人：{{ $json.customer }}\n類型：{{ $json.dineIn ? \"內用\" : \"外帶\" }}\n備註：{{ $json.note }}"
+        "message": "=🎉 成交通知！\n業務：{{ $json.salesRep }}\n客戶：{{ $json.customer }}\n產品：{{ $json.product }}\n金額：${{ $json.amount.toLocaleString() }}\n區域：{{ $json.region }}",
+        "channel": {
+          "__rl": true,
+          "value": "#sales-wins",
+          "mode": "name"
+        }
       },
       "id": "700d5410-6ce1-4d12-a39a-b4e7f7dd1796",
-      "name": "Slack — 通知廚房",
+      "name": "Slack — 通知業務群組",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.4,
       "position": [
@@ -37,10 +43,10 @@
         "sendBody": true,
         "contentType": "json",
         "specifyBody": "json",
-        "jsonBody": "={ \"orderId\": \"{{ $now.toFormat(\"yyyyMMddHHmmss\") }}\", \"item\": \"{{ $json.item }}\", \"qty\": {{ $json.qty }}, \"customer\": \"{{ $json.customer }}\", \"address\": \"{{ $json.address }}\" }"
+        "jsonBody": "={ \"dealId\": \"DEAL-{{ $now.toFormat(\"yyyyMMddHHmmss\") }}\", \"salesRep\": \"{{ $json.salesRep }}\", \"customer\": \"{{ $json.customer }}\", \"product\": \"{{ $json.product }}\", \"amount\": {{ $json.amount }}, \"stage\": \"{{ $json.stage }}\", \"action\": \"update_crm\" }"
       },
       "id": "5042851d-f372-4e2b-a876-d377c07c4aca",
-      "name": "HTTP — 叫外送 API",
+      "name": "HTTP — 更新 CRM API",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
@@ -50,12 +56,12 @@
     },
     {
       "parameters": {
-        "content": "## Demo 4：Integrations 整合節點\n### 比喻：「通知廚房、叫外送員」\n\n**核心概念：** 串接第三方服務\n\n**兩種整合方式：**\n- **專用整合**（Slack、Gmail、Notion…）→ 內建認證、參數提示\n- **萬用 HTTP**（HTTP Request）→ 什麼 API 都能打\n\nn8n 有 **400+** 專用整合節點\n找不到的就用 HTTP Request\n\n**Fan-out 模式：** 一筆訂單同時通知兩個服務",
+        "content": "## Demo 4：Integrations 整合節點\n### 比喻：「通知業務主管、更新 CRM」\n\n**核心概念：** 串接第三方服務\n\n**兩種整合方式：**\n- **專用整合**（Slack、Gmail、Notion…）→ 內建認證、參數提示\n- **萬用 HTTP**（HTTP Request）→ 什麼 API 都能打\n\nn8n 有 **400+** 專用整合節點\n找不到的就用 HTTP Request\n\n**Fan-out 模式：** 一筆成交同時通知 Slack + 更新 CRM",
         "height": 340,
         "width": 520,
         "color": 4
       },
-      "id": "sticky-overview",
+      "id": "34217b5a-4ca2-412b-8f95-e029a0569d5a",
       "name": "Sticky Note",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
@@ -66,12 +72,12 @@
     },
     {
       "parameters": {
-        "content": "### 專用節點：Slack\n✅ 內建 OAuth 認證\n✅ 參數有下拉選單\n✅ 錯誤訊息友善\n\n需要先設定 Slack credential\n選擇頻道 → 送出訊息",
+        "content": "### 專用節點：Slack\n✅ 內建 OAuth 認證\n✅ 參數有下拉選單\n✅ 錯誤訊息友善\n\n需要先設定 Slack credential\n選擇頻道 → 送出成交通知",
         "height": 300,
         "width": 280,
         "color": 6
       },
-      "id": "sticky-slack",
+      "id": "68f089ed-8ef8-4f04-84b3-3846a84dac65",
       "name": "Sticky Note1",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
@@ -82,12 +88,12 @@
     },
     {
       "parameters": {
-        "content": "### 萬用節點：HTTP Request\n✅ 什麼 API 都能打\n✅ 支援各種認證方式\n⚠️ 需要自己組 headers/body\n\n這裡用 httpbin.org 測試\n實際換成外送平台 API",
+        "content": "### 萬用節點：HTTP Request\n✅ 什麼 API 都能打\n✅ 支援各種認證方式\n⚠️ 需要自己組 headers/body\n\n這裡用 httpbin.org 測試\n實際換成 CRM / ERP API",
         "height": 300,
         "width": 280,
         "color": 3
       },
-      "id": "sticky-http",
+      "id": "a3d56550-6b38-4e84-917d-d1bd9784fba4",
       "name": "Sticky Note2",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
@@ -98,16 +104,16 @@
     }
   ],
   "connections": {
-    "Manual Trigger": {
+    "Fake Sales": {
       "main": [
         [
           {
-            "node": "Slack — 通知廚房",
+            "node": "Slack — 通知業務群組",
             "type": "main",
             "index": 0
           },
           {
-            "node": "HTTP — 叫外送 API",
+            "node": "HTTP — 更新 CRM API",
             "type": "main",
             "index": 0
           }
@@ -116,16 +122,28 @@
     }
   },
   "pinData": {
-    "Manual Trigger": [
+    "Fake Sales": [
       {
         "json": {
-          "item": "拿鐵",
-          "qty": 2,
-          "customer": "Alice",
-          "dineIn": false,
-          "note": "去冰微糖",
-          "address": "台北市大安區復興南路 100 號",
-          "phone": "0912-345-678"
+          "id": 5,
+          "salesRep": "張家豪",
+          "department": "中小企業部",
+          "region": "北區",
+          "customer": "矽谷數位科技",
+          "industry": "軟體服務",
+          "contact": "許總監",
+          "email": "hsu.cto@svtech-demo.tw",
+          "phone": "02-8771-0005",
+          "product": "DevOps 自動化工具組",
+          "category": "開發工具",
+          "unitPrice": 45000,
+          "quantity": 20,
+          "amount": 900000,
+          "stage": "成交",
+          "probability": 100,
+          "createdDate": "2024-11-05",
+          "expectedCloseDate": "2025-02-28",
+          "notes": "已簽約並完成第一期款項"
         }
       }
     ]

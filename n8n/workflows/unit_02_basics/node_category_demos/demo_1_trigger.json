@@ -1,5 +1,5 @@
 {
-  "name": "Demo 1 — Trigger (客人送出訂單)",
+  "name": "Demo 1 — Trigger (業務回報新商機)",
   "nodes": [
     {
       "parameters": {},
@@ -17,8 +17,8 @@
         "rule": {
           "interval": [
             {
-              "field": "minutes",
-              "minutesInterval": 30
+              "field": "hours",
+              "hoursInterval": 1
             }
           ]
         }
@@ -35,7 +35,7 @@
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "food-order",
+        "path": "new-deal",
         "responseMode": "responseNode"
       },
       "id": "bc60cc7c-f5d3-4516-b873-39c43635872c",
@@ -45,7 +45,8 @@
       "position": [
         200,
         780
-      ]
+      ],
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
@@ -54,33 +55,39 @@
           "assignments": [
             {
               "id": "1",
-              "name": "orderId",
-              "value": "={{ $now.toFormat(\"yyyyMMddHHmmss\") }}",
+              "name": "dealId",
+              "value": "=DEAL-{{ $now.toFormat(\"yyyyMMddHHmmss\") }}",
               "type": "string"
             },
             {
               "id": "2",
-              "name": "item",
-              "value": "={{ $json.body?.item ?? $json.item ?? \"拿鐵\" }}",
+              "name": "salesRep",
+              "value": "={{ $json.body ? $json.body.salesRep : ($json.salesRep ?? \"林志明\") }}",
               "type": "string"
             },
             {
               "id": "3",
-              "name": "qty",
-              "value": "={{ $json.body?.qty ?? $json.qty ?? 1 }}",
-              "type": "number"
+              "name": "customer",
+              "value": "={{ $json.body ? $json.body.customer : ($json.customer ?? \"鴻海精密工業\") }}",
+              "type": "string"
             },
             {
               "id": "4",
-              "name": "status",
-              "value": "received",
+              "name": "amount",
+              "value": "={{ $json.body ? $json.body.amount : ($json.amount ?? 640000) }}",
+              "type": "number"
+            },
+            {
+              "id": "5",
+              "name": "stage",
+              "value": "提案中",
               "type": "string"
             }
           ]
         }
       },
       "id": "7b8e30f8-5ea3-4262-b2a6-c84e1fee5d6f",
-      "name": "Format Order Receipt",
+      "name": "Format Deal Record",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
@@ -91,7 +98,7 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={ \"success\": true, \"orderId\": \"{{ $json.orderId }}\", \"message\": \"訂單已收到！\" }"
+        "responseBody": "={ \"success\": true, \"dealId\": \"{{ $json.dealId }}\", \"message\": \"商機已建立！\" }"
       },
       "id": "6b0da702-a490-4287-8630-e92a9c410b41",
       "name": "Respond to Webhook",
@@ -104,12 +111,12 @@
     },
     {
       "parameters": {
-        "content": "## Demo 1：Trigger 觸發節點\n### 比喻：客人按下「送出訂單」\n\n**核心概念：** 每個 Workflow 至少需要一個 Trigger 來啟動\n\n**三種觸發方式：**\n- **Manual** → 手動按鈕測試（開發除錯用）\n- **Schedule** → 定時自動執行（每 30 分鐘巡檢）\n- **Webhook** → 外部系統呼叫（LINE Bot / App）\n\n**教學重點：** 三個 Trigger 都連到同一個節點 (fan-in 模式)",
+        "content": "## Demo 1：Trigger 觸發節點\n### 比喻：業務回報新商機\n\n**核心概念：** 每個 Workflow 至少需要一個 Trigger 來啟動\n\n**三種觸發方式：**\n- **Manual** → 手動按鈕測試（開發除錯用）\n- **Schedule** → 定時自動執行（每小時抓取 CRM 新商機）\n- **Webhook** → 外部系統呼叫（CRM / 表單送入）\n\n**教學重點：** 三個 Trigger 都連到同一個節點 (fan-in 模式)",
         "height": 320,
         "width": 520,
         "color": 4
       },
-      "id": "sticky-overview",
+      "id": "500b10c0-313b-4f89-8c3d-09e702116f48",
       "name": "Sticky Note",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
@@ -120,12 +127,12 @@
     },
     {
       "parameters": {
-        "content": "### 1. Manual Trigger\n按一下就跑，開發測試最方便\n\n→ 搭配 pinData 預設資料\n不需要真的發 HTTP",
+        "content": "### 1. Manual Trigger\n按一下就跑，開發測試最方便\n\n→ 搭配 pinData 預設銷售資料\n不需要真的呼叫 CRM",
         "height": 260,
         "width": 240,
         "color": 6
       },
-      "id": "sticky-manual",
+      "id": "da03ac53-9f69-4ae0-baac-199e7ed5cb36",
       "name": "Sticky Note1",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
@@ -136,12 +143,12 @@
     },
     {
       "parameters": {
-        "content": "### 2. Schedule Trigger\n時間到自動觸發\n\n每 30 分鐘 = 自動重複訂單\n像是定期備份、排程報表",
+        "content": "### 2. Schedule Trigger\n時間到自動觸發\n\n每小時 = 定時巡檢 CRM 新商機\n像是同步資料、排程報表",
         "height": 260,
         "width": 240,
         "color": 3
       },
-      "id": "sticky-schedule",
+      "id": "88bee6ca-d865-40ac-8e58-fe5fddafe1ac",
       "name": "Sticky Note2",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
@@ -152,12 +159,12 @@
     },
     {
       "parameters": {
-        "content": "### 3. Webhook Trigger\n外部系統 POST 進來觸發\n\n這是 LINE Bot 實際用的方式\npath: /webhook/food-order",
+        "content": "### 3. Webhook Trigger\n外部系統 POST 進來觸發\n\nCRM 填完表單自動送入\npath: /webhook/new-deal",
         "height": 260,
         "width": 240,
         "color": 5
       },
-      "id": "sticky-webhook",
+      "id": "10484efd-2b31-4759-90ef-aa261055e64c",
       "name": "Sticky Note3",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
@@ -173,7 +180,7 @@
         "width": 480,
         "color": 2
       },
-      "id": "sticky-process",
+      "id": "4a1fb191-1d66-4156-bc62-0d65936ba339",
       "name": "Sticky Note4",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
@@ -188,7 +195,7 @@
       "main": [
         [
           {
-            "node": "Format Order Receipt",
+            "node": "Format Deal Record",
             "type": "main",
             "index": 0
           }
@@ -199,7 +206,7 @@
       "main": [
         [
           {
-            "node": "Format Order Receipt",
+            "node": "Format Deal Record",
             "type": "main",
             "index": 0
           }
@@ -210,14 +217,14 @@
       "main": [
         [
           {
-            "node": "Format Order Receipt",
+            "node": "Format Deal Record",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Format Order Receipt": {
+    "Format Deal Record": {
       "main": [
         [
           {
@@ -233,20 +240,24 @@
     "Manual Trigger": [
       {
         "json": {
-          "item": "拿鐵",
-          "qty": 2,
-          "customer": "Alice",
-          "note": "少冰"
+          "salesRep": "林志明",
+          "customer": "鴻海精密工業",
+          "product": "企業雲端方案 Pro",
+          "category": "雲端服務",
+          "amount": 640000,
+          "region": "北區"
         }
       }
     ],
     "Schedule Trigger": [
       {
         "json": {
-          "item": "美式咖啡",
-          "qty": 1,
-          "customer": "系統自動訂單",
-          "note": "每日固定"
+          "salesRep": "系統自動同步",
+          "customer": "台積電",
+          "product": "資安防護旗艦方案",
+          "category": "資安方案",
+          "amount": 1500000,
+          "region": "北區"
         }
       }
     ],
@@ -257,10 +268,12 @@
           "params": {},
           "query": {},
           "body": {
-            "item": "抹茶拿鐵",
-            "qty": 1,
-            "customer": "Bob",
-            "note": "去冰微糖"
+            "salesRep": "陳建宏",
+            "customer": "國泰世華銀行",
+            "product": "AI 風控分析平台",
+            "category": "AI 解決方案",
+            "amount": 980000,
+            "region": "北區"
           }
         }
       }
