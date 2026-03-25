@@ -36,9 +36,17 @@
         "method": "POST",
         "url": "https://httpbin.org/post",
         "sendBody": true,
-        "contentType": "json",
-        "specifyBody": "json",
-        "jsonBody": "={ \"dealId\": \"DEAL-{{ $now.toFormat(\"yyyyMMddHHmmss\") }}\", \"salesRep\": \"{{ $json.salesRep }}\", \"customer\": \"{{ $json.customer }}\", \"amount\": {{ $json.amount }}, \"stage\": \"{{ $json.stage }}\", \"action\": \"create_deal\" }"
+        "specifyBody": "keypair",
+        "bodyParameters": {
+          "parameters": [
+            {"name": "dealId", "value": "=DEAL-{{ $now.toFormat(\"yyyyMMddHHmmss\") }}"},
+            {"name": "salesRep", "value": "={{ $json.salesRep }}"},
+            {"name": "customer", "value": "={{ $json.customer }}"},
+            {"name": "amount", "value": "={{ $json.amount }}"},
+            {"name": "stage", "value": "={{ $json.stage }}"},
+            {"name": "action", "value": "create_deal"}
+          ]
+        }
       },
       "id": "33333333-0001-0001-0001-000000000004",
       "name": "POST — 送出銷售資料到 CRM",
