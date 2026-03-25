@@ -18,17 +18,17 @@
       "position": [460, 400]
     },
     {
-      "parameters": {"mode": "runOnceForAllItems", "jsCode": "const items = $input.all();\nconst totalAmount = items.reduce((s, i) => s + i.json.amount, 0);\nconst totalWeighted = items.reduce((s, i) => s + i.json.weightedAmount, 0);\nconst totalCommission = items.reduce((s, i) => s + i.json.commission, 0);\nconst byRep = {};\nitems.forEach(i => { const rep = i.json.salesRep; if (!byRep[rep]) byRep[rep] = { deals: 0, amount: 0 }; byRep[rep].deals++; byRep[rep].amount += i.json.amount; });\nconst lines = items.map(i => `${i.json.customer}  $${i.json.amount.toLocaleString()}  [${i.json.stage}]`);\nconst repLines = Object.entries(byRep).map(([rep, d]) => `${rep}：${d.deals} 筆`);\nconst report = ['== Pipeline 報表 ==', `商機：${items.length} 筆`, `總額：$${totalAmount.toLocaleString()}`, `加權：$${totalWeighted.toLocaleString()}`, `佣金：$${totalCommission.toLocaleString()}`, '-- 業務 --', ...repLines, '-- 明細 --', ...lines].join('\\n');\nreturn [{ json: { totalDeals: items.length, totalAmount, totalWeighted, totalCommission, report }}];"},
+      "parameters": {"mode": "runOnceForAllItems", "language": "python", "pythonCode": "items = _input.all()\n\ntotal_amount = sum(i.json['amount'] for i in items)\ntotal_weighted = sum(i.json['weightedAmount'] for i in items)\ntotal_commission = sum(i.json['commission'] for i in items)\n\n# 依業務分組統計\nby_rep = {}\nfor i in items:\n    rep = i.json['salesRep']\n    if rep not in by_rep:\n        by_rep[rep] = {'deals': 0, 'amount': 0}\n    by_rep[rep]['deals'] += 1\n    by_rep[rep]['amount'] += i.json['amount']\n\n# 組報表\nrep_lines = [f\"{rep}：{d['deals']} 筆\" for rep, d in by_rep.items()]\ndetail_lines = [f\"{i.json['customer']}  ${i.json['amount']:,}  [{i.json['stage']}]\" for i in items]\n\nreport = '\\n'.join([\n    '== Pipeline 報表 ==',\n    f'商機：{len(items)} 筆',\n    f'總額：${total_amount:,}',\n    f'加權：${total_weighted:,}',\n    f'佣金：${total_commission:,}',\n    '-- 業務 --',\n    *rep_lines,\n    '-- 明細 --',\n    *detail_lines\n])\n\nreturn [{\n    'json': {\n        'totalDeals': len(items),\n        'totalAmount': total_amount,\n        'totalWeighted': total_weighted,\n        'totalCommission': total_commission,\n        'report': report\n    }\n}]"},
       "id": "66666666-0001-0001-0001-000000000003",
-      "name": "Code — 彙總報表",
+      "name": "Code (Python) — 彙總報表",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [720, 400]
     },
     {
       "parameters": {
-        "content": "## L06：資料轉換\n### Set（加欄位）→ Code（彙總）\n\n**學習目標：**\n1. Set 節點：用 Expression 新增計算欄位\n2. Code 節點：用 JS 做複雜彙總\n3. 觀察 output 數量變化：5 → 5 → 1\n\n**計算邏輯：**\n- 加權金額 = amount × probability%\n- 佣金 = 加權金額 × 5%\n\n**對應教材：** 06b_資料格式.md 第 2 章 JSON",
-        "height": 380, "width": 500, "color": 4
+        "content": "## L06：資料轉換\n### Set（加欄位）→ Code Python（彙總）\n\n**學習目標：**\n1. Set 節點：用 Expression 新增計算欄位\n2. Code 節點：用 **Python** 做複雜彙總\n3. 觀察 output 數量變化：5 → 5 → 1\n\n**計算邏輯：**\n- 加權金額 = amount × probability%\n- 佣金 = 加權金額 × 5%\n\n**Python Code 重點語法：**\n- `_input.all()` 取得所有輸入資料\n- `i.json['欄位名']` 取值\n- 回傳 `[{'json': {...}}]`\n- f-string 格式化：`f'${total:,}'`\n\n**對應教材：** 06b_資料格式.md 第 2 章 JSON",
+        "height": 480, "width": 500, "color": 4
       },
       "id": "66666666-0001-0001-0001-000000000004",
       "name": "Sticky Note",
@@ -39,7 +39,7 @@
   ],
   "connections": {
     "Fake Sales": {"main": [[{"node": "Set — 計算加權與佣金", "type": "main", "index": 0}]]},
-    "Set — 計算加權與佣金": {"main": [[{"node": "Code — 彙總報表", "type": "main", "index": 0}]]}
+    "Set — 計算加權與佣金": {"main": [[{"node": "Code (Python) — 彙總報表", "type": "main", "index": 0}]]}
   },
   "pinData": {
     "Fake Sales": [
