@@ -2,244 +2,542 @@
   "name": "[Enterprise] Flow B — Multimodal LINE Bot",
   "nodes": [
     {
-      "parameters": { "events": ["message"] },
+      "parameters": {
+        "events": [
+          "message"
+        ]
+      },
       "id": "b0020001-0001-4b00-c001-000000000001",
       "name": "Line Messaging Trigger",
       "type": "@aotoki/n8n-nodes-line-messaging.lineMessagingTrigger",
       "typeVersion": 1,
-      "position": [-16, 600],
-      "credentials": { "lineMessagingApi": { "id": "LINE_MESSAGING_CREDENTIAL_ID", "name": "LINE Messaging API" } }
+      "position": [
+        -16,
+        600
+      ],
+      "credentials": {
+        "lineMessagingApi": {
+          "id": "LINE_MESSAGING_CREDENTIAL_ID",
+          "name": "LINE Messaging API"
+        }
+      }
     },
     {
       "parameters": {
-        "jsCode": "const items = $input.all();\nconst msgType = items[0]?.json?.message?.type || '';\nconst replyToken = items[0]?.json?.replyToken || '';\nconst userId = items[0]?.json?.source?.userId || '';\n\nif (msgType === 'text') {\n  return [{ json: { queryText: items[0].json.message.text, replyToken, userId, branch: 'text' } }];\n}\nif (msgType === 'image') {\n  return [{ json: { ...items[0].json, replyToken, userId, branch: 'image' } }];\n}\nif (msgType === 'audio') {\n  return [{ json: { ...items[0].json, replyToken, userId, branch: 'audio' } }];\n}\nif (msgType === 'video') {\n  return [{ json: { ...items[0].json, replyToken, userId, branch: 'video' } }];\n}\nreturn [{ json: { replyToken, userId, branch: 'unsupported' } }];"
+        "mode": "runOnceForAllItems",
+        "language": "python",
+        "pythonCode": "items = _input.all()\nj = items[0].json\nmsg_type = (j.get(\"message\") or {}).get(\"type\", \"\")\nreply_token = j.get(\"replyToken\", \"\")\nuser_id = (j.get(\"source\") or {}).get(\"userId\", \"\")\n\nif msg_type == \"text\":\n    return [{\"json\": {\"queryText\": j[\"message\"][\"text\"], \"replyToken\": reply_token, \"userId\": user_id, \"branch\": \"text\"}}]\nif msg_type == \"image\":\n    return [{\"json\": {**j, \"replyToken\": reply_token, \"userId\": user_id, \"branch\": \"image\"}}]\nif msg_type == \"audio\":\n    return [{\"json\": {**j, \"replyToken\": reply_token, \"userId\": user_id, \"branch\": \"audio\"}}]\nif msg_type == \"video\":\n    return [{\"json\": {**j, \"replyToken\": reply_token, \"userId\": user_id, \"branch\": \"video\"}}]\nreturn [{\"json\": {\"replyToken\": reply_token, \"userId\": user_id, \"branch\": \"unsupported\"}}]"
       },
       "id": "b0020001-0002-4b00-c002-000000000002",
       "name": "Code — Classify Message",
-      "type": "n8n-nodes-base.code", "typeVersion": 2,
-      "position": [200, 600]
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        200,
+        600
+      ]
     },
     {
-      "parameters": { "jsCode": "const item = $input.first();\nif (item.json.branch === 'text') return [item];\nreturn [];" },
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "python",
+        "pythonCode": "item = _input.first()\nif item.json.get(\"branch\") == \"text\":\n    return [item]\nreturn []"
+      },
       "id": "b0020001-0010-4b00-c010-000000000010",
       "name": "Route — Text",
-      "type": "n8n-nodes-base.code", "typeVersion": 2,
-      "position": [450, 300]
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        450,
+        300
+      ]
     },
     {
-      "parameters": { "jsCode": "const item = $input.first();\nif (item.json.branch === 'image') return [item];\nreturn [];" },
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "python",
+        "pythonCode": "item = _input.first()\nif item.json.get(\"branch\") == \"image\":\n    return [item]\nreturn []"
+      },
       "id": "b0020001-0020-4b00-c020-000000000020",
       "name": "Route — Image",
-      "type": "n8n-nodes-base.code", "typeVersion": 2,
-      "position": [450, 600]
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        450,
+        600
+      ]
     },
     {
       "parameters": {
         "method": "GET",
         "url": "=https://api-data.line.me/v2/bot/message/{{ $json.message.id }}/content",
         "sendHeaders": true,
-        "headerParameters": { "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $vars.LINE_CHANNEL_ACCESS_TOKEN }}" }] },
-        "options": { "response": { "responseFormat": "file" } }
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $vars.LINE_CHANNEL_ACCESS_TOKEN }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "responseFormat": "file"
+          }
+        }
       },
       "id": "b0020001-0021-4b00-c021-000000000021",
       "name": "HTTP — Download Image",
-      "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2,
-      "position": [700, 600]
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        700,
+        600
+      ]
     },
     {
       "parameters": {
-        "method": "POST", "url": "https://api.openai.com/v1/chat/completions",
-        "authentication": "predefinedCredentialType", "nodeCredentialType": "openAIApi",
-        "sendBody": true, "contentType": "json",
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAIApi",
+        "sendBody": true,
+        "contentType": "json",
         "body": "={\n  \"model\": \"gpt-4o\",\n  \"messages\": [\n    { \"role\": \"system\", \"content\": \"Describe this image. If there is text, transcribe it. Generate a concise search query in Traditional Chinese.\\nFormat: Description: <desc>\\nSearch Query: <query>\" },\n    { \"role\": \"user\", \"content\": [{ \"type\": \"image_url\", \"image_url\": { \"url\": \"data:image/jpeg;base64,{{ $binary.data.data }}\" } }] }\n  ],\n  \"max_tokens\": 1000\n}"
       },
       "id": "b0020001-0022-4b00-c022-000000000022",
       "name": "HTTP — OpenAI Vision",
-      "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2,
-      "position": [950, 600],
-      "credentials": { "openAIApi": { "id": "OPENAI_CREDENTIAL_ID", "name": "OpenAI account" } }
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        950,
+        600
+      ],
+      "credentials": {
+        "openAIApi": {
+          "id": "OPENAI_CREDENTIAL_ID",
+          "name": "OpenAI account"
+        }
+      }
     },
     {
       "parameters": {
-        "mode": "manual", "duplicateItem": false,
-        "assignments": { "assignments": [
-          { "name": "queryText", "value": "={{ $json.choices[0].message.content }}", "type": "string" },
-          { "name": "replyToken", "value": "={{ $('Code — Classify Message').item.json.replyToken }}", "type": "string" },
-          { "name": "userId", "value": "={{ $('Code — Classify Message').item.json.userId }}", "type": "string" }
-        ]}, "options": {}
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            {
+              "name": "queryText",
+              "value": "={{ $json.choices[0].message.content }}",
+              "type": "string"
+            },
+            {
+              "name": "replyToken",
+              "value": "={{ $('Code — Classify Message').item.json.replyToken }}",
+              "type": "string"
+            },
+            {
+              "name": "userId",
+              "value": "={{ $('Code — Classify Message').item.json.userId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
       },
       "id": "b0020001-0023-4b00-c023-000000000023",
       "name": "Set — Image Query",
-      "type": "n8n-nodes-base.set", "typeVersion": 3.4,
-      "position": [1200, 600]
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1200,
+        600
+      ]
     },
     {
-      "parameters": { "jsCode": "const item = $input.first();\nif (item.json.branch === 'audio') return [item];\nreturn [];" },
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "python",
+        "pythonCode": "item = _input.first()\nif item.json.get(\"branch\") == \"audio\":\n    return [item]\nreturn []"
+      },
       "id": "b0020001-0030-4b00-c030-000000000030",
       "name": "Route — Audio",
-      "type": "n8n-nodes-base.code", "typeVersion": 2,
-      "position": [450, 900]
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        450,
+        900
+      ]
     },
     {
       "parameters": {
         "method": "GET",
         "url": "=https://api-data.line.me/v2/bot/message/{{ $json.message.id }}/content",
         "sendHeaders": true,
-        "headerParameters": { "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $vars.LINE_CHANNEL_ACCESS_TOKEN }}" }] },
-        "options": { "response": { "responseFormat": "file" } }
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $vars.LINE_CHANNEL_ACCESS_TOKEN }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "responseFormat": "file"
+          }
+        }
       },
       "id": "b0020001-0031-4b00-c031-000000000031",
       "name": "HTTP — Download Audio",
-      "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2,
-      "position": [700, 900]
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        700,
+        900
+      ]
     },
     {
       "parameters": {
-        "method": "POST", "url": "https://api.openai.com/v1/audio/transcriptions",
-        "authentication": "predefinedCredentialType", "nodeCredentialType": "openAIApi",
-        "sendBody": true, "contentType": "multipart-form-data",
-        "bodyParameters": { "parameters": [
-          { "parameterType": "formBinaryData", "name": "file", "inputDataFieldName": "data" },
-          { "parameterType": "formData", "name": "model", "value": "whisper-1" },
-          { "parameterType": "formData", "name": "language", "value": "zh" },
-          { "parameterType": "formData", "name": "response_format", "value": "text" }
-        ]}
+        "method": "POST",
+        "url": "https://api.openai.com/v1/audio/transcriptions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAIApi",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            },
+            {
+              "parameterType": "formData",
+              "name": "model",
+              "value": "whisper-1"
+            },
+            {
+              "parameterType": "formData",
+              "name": "language",
+              "value": "zh"
+            },
+            {
+              "parameterType": "formData",
+              "name": "response_format",
+              "value": "text"
+            }
+          ]
+        }
       },
       "id": "b0020001-0032-4b00-c032-000000000032",
       "name": "HTTP — Whisper Audio",
-      "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2,
-      "position": [950, 900],
-      "credentials": { "openAIApi": { "id": "OPENAI_CREDENTIAL_ID", "name": "OpenAI account" } }
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        950,
+        900
+      ],
+      "credentials": {
+        "openAIApi": {
+          "id": "OPENAI_CREDENTIAL_ID",
+          "name": "OpenAI account"
+        }
+      }
     },
     {
       "parameters": {
-        "mode": "manual", "duplicateItem": false,
-        "assignments": { "assignments": [
-          { "name": "queryText", "value": "={{ typeof $json === 'string' ? $json : ($json.data ?? $json.text ?? '') }}", "type": "string" },
-          { "name": "replyToken", "value": "={{ $('Code — Classify Message').item.json.replyToken }}", "type": "string" },
-          { "name": "userId", "value": "={{ $('Code — Classify Message').item.json.userId }}", "type": "string" }
-        ]}, "options": {}
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            {
+              "name": "queryText",
+              "value": "={{ typeof $json === 'string' ? $json : ($json.data ?? $json.text ?? '') }}",
+              "type": "string"
+            },
+            {
+              "name": "replyToken",
+              "value": "={{ $('Code — Classify Message').item.json.replyToken }}",
+              "type": "string"
+            },
+            {
+              "name": "userId",
+              "value": "={{ $('Code — Classify Message').item.json.userId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
       },
       "id": "b0020001-0033-4b00-c033-000000000033",
       "name": "Set — Audio Query",
-      "type": "n8n-nodes-base.set", "typeVersion": 3.4,
-      "position": [1200, 900]
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1200,
+        900
+      ]
     },
     {
-      "parameters": { "jsCode": "const item = $input.first();\nif (item.json.branch === 'video') return [item];\nreturn [];" },
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "python",
+        "pythonCode": "item = _input.first()\nif item.json.get(\"branch\") == \"video\":\n    return [item]\nreturn []"
+      },
       "id": "b0020001-0040-4b00-c040-000000000040",
       "name": "Route — Video",
-      "type": "n8n-nodes-base.code", "typeVersion": 2,
-      "position": [450, 1200]
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        450,
+        1200
+      ]
     },
     {
       "parameters": {
         "method": "GET",
         "url": "=https://api-data.line.me/v2/bot/message/{{ $json.message.id }}/content",
         "sendHeaders": true,
-        "headerParameters": { "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $vars.LINE_CHANNEL_ACCESS_TOKEN }}" }] },
-        "options": { "response": { "responseFormat": "file" } }
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $vars.LINE_CHANNEL_ACCESS_TOKEN }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "responseFormat": "file"
+          }
+        }
       },
       "id": "b0020001-0041-4b00-c041-000000000041",
       "name": "HTTP — Download Video",
-      "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2,
-      "position": [700, 1200]
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        700,
+        1200
+      ]
     },
     {
       "parameters": {
-        "method": "POST", "url": "https://api.openai.com/v1/audio/transcriptions",
-        "authentication": "predefinedCredentialType", "nodeCredentialType": "openAIApi",
-        "sendBody": true, "contentType": "multipart-form-data",
-        "bodyParameters": { "parameters": [
-          { "parameterType": "formBinaryData", "name": "file", "inputDataFieldName": "data" },
-          { "parameterType": "formData", "name": "model", "value": "whisper-1" },
-          { "parameterType": "formData", "name": "language", "value": "zh" },
-          { "parameterType": "formData", "name": "response_format", "value": "text" }
-        ]}
+        "method": "POST",
+        "url": "https://api.openai.com/v1/audio/transcriptions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAIApi",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            },
+            {
+              "parameterType": "formData",
+              "name": "model",
+              "value": "whisper-1"
+            },
+            {
+              "parameterType": "formData",
+              "name": "language",
+              "value": "zh"
+            },
+            {
+              "parameterType": "formData",
+              "name": "response_format",
+              "value": "text"
+            }
+          ]
+        }
       },
       "id": "b0020001-0042-4b00-c042-000000000042",
       "name": "HTTP — Whisper Video",
-      "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2,
-      "position": [950, 1200],
-      "credentials": { "openAIApi": { "id": "OPENAI_CREDENTIAL_ID", "name": "OpenAI account" } }
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        950,
+        1200
+      ],
+      "credentials": {
+        "openAIApi": {
+          "id": "OPENAI_CREDENTIAL_ID",
+          "name": "OpenAI account"
+        }
+      }
     },
     {
       "parameters": {
-        "mode": "manual", "duplicateItem": false,
-        "assignments": { "assignments": [
-          { "name": "queryText", "value": "={{ typeof $json === 'string' ? $json : ($json.data ?? $json.text ?? '') }}", "type": "string" },
-          { "name": "replyToken", "value": "={{ $('Code — Classify Message').item.json.replyToken }}", "type": "string" },
-          { "name": "userId", "value": "={{ $('Code — Classify Message').item.json.userId }}", "type": "string" }
-        ]}, "options": {}
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            {
+              "name": "queryText",
+              "value": "={{ typeof $json === 'string' ? $json : ($json.data ?? $json.text ?? '') }}",
+              "type": "string"
+            },
+            {
+              "name": "replyToken",
+              "value": "={{ $('Code — Classify Message').item.json.replyToken }}",
+              "type": "string"
+            },
+            {
+              "name": "userId",
+              "value": "={{ $('Code — Classify Message').item.json.userId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
       },
       "id": "b0020001-0043-4b00-c043-000000000043",
       "name": "Set — Video Query",
-      "type": "n8n-nodes-base.set", "typeVersion": 3.4,
-      "position": [1200, 1200]
-    },
-    {
-      "parameters": { "jsCode": "const item = $input.first();\nif (item.json.branch === 'unsupported') return [item];\nreturn [];" },
-      "id": "b0020001-0050-4b00-c050-000000000050",
-      "name": "Route — Unsupported",
-      "type": "n8n-nodes-base.code", "typeVersion": 2,
-      "position": [450, 1500]
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1200,
+        1200
+      ]
     },
     {
       "parameters": {
-        "messages": { "values": [{ "text": "Sorry, only text, image, audio, and video messages are supported." }] },
+        "mode": "runOnceForAllItems",
+        "language": "python",
+        "pythonCode": "item = _input.first()\nif item.json.get(\"branch\") == \"unsupported\":\n    return [item]\nreturn []"
+      },
+      "id": "b0020001-0050-4b00-c050-000000000050",
+      "name": "Route — Unsupported",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        450,
+        1500
+      ]
+    },
+    {
+      "parameters": {
+        "messages": {
+          "values": [
+            {
+              "text": "Sorry, only text, image, audio, and video messages are supported."
+            }
+          ]
+        },
         "replyToken": "={{ $json.replyToken }}"
       },
       "id": "b0020001-0051-4b00-c051-000000000051",
       "name": "LINE — Reply Unsupported",
-      "type": "@aotoki/n8n-nodes-line-messaging.lineMessaging", "typeVersion": 1,
-      "position": [700, 1500],
-      "credentials": { "lineMessagingApi": { "id": "LINE_MESSAGING_CREDENTIAL_ID", "name": "LINE Messaging API" } }
+      "type": "@aotoki/n8n-nodes-line-messaging.lineMessaging",
+      "typeVersion": 1,
+      "position": [
+        700,
+        1500
+      ],
+      "credentials": {
+        "lineMessagingApi": {
+          "id": "LINE_MESSAGING_CREDENTIAL_ID",
+          "name": "LINE Messaging API"
+        }
+      }
     },
     {
       "parameters": {
-        "jsCode": "// Merge all query branches + pass through\nconst items = $input.all();\nif (items.length === 0) return [];\nreturn items;"
+        "mode": "runOnceForAllItems",
+        "language": "python",
+        "pythonCode": "items = _input.all()\nif not items:\n    return []\nreturn items"
       },
       "id": "b0020001-0060-4b00-c060-000000000060",
       "name": "Code — Merge Queries",
-      "type": "n8n-nodes-base.code", "typeVersion": 2,
-      "position": [1450, 600]
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1450,
+        600
+      ]
     },
     {
       "parameters": {
-        "jsCode": "// HyDE: Generate hypothetical answer, use it as the query for better retrieval\nconst query = $json.queryText || '';\nreturn [{ json: {\n  ...$json,\n  originalQuery: query,\n  hydePrompt: `Given the question: \"${query}\"\\n\\nWrite a detailed hypothetical paragraph (in Traditional Chinese) that would perfectly answer this question. Include specific details, names, numbers. Output ONLY the paragraph.`\n}}];"
+        "mode": "runOnceForAllItems",
+        "language": "python",
+        "pythonCode": "j = dict(_input.first().json)\nquery = j.get(\"queryText\", \"\")\nhyde_prompt = (\n    f'Given the question: \"{query}\"\\n\\n'\n    \"Write a detailed hypothetical paragraph (in Traditional Chinese) \"\n    \"that would perfectly answer this question. Include specific details, \"\n    \"names, numbers. Output ONLY the paragraph.\"\n)\nreturn [{\"json\": {**j, \"originalQuery\": query, \"hydePrompt\": hyde_prompt}}]"
       },
       "id": "b0020001-0061-4b00-c061-000000000061",
       "name": "Code — HyDE Prompt",
-      "type": "n8n-nodes-base.code", "typeVersion": 2,
-      "position": [1700, 600]
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1700,
+        600
+      ]
     },
     {
       "parameters": {
-        "method": "POST", "url": "https://api.openai.com/v1/chat/completions",
-        "authentication": "predefinedCredentialType", "nodeCredentialType": "openAIApi",
-        "sendBody": true, "contentType": "json",
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAIApi",
+        "sendBody": true,
+        "contentType": "json",
         "body": "={\n  \"model\": \"gpt-4o-mini\",\n  \"messages\": [{ \"role\": \"user\", \"content\": \"{{ $json.hydePrompt }}\" }],\n  \"max_tokens\": 500,\n  \"temperature\": 0.7\n}"
       },
       "id": "b0020001-0062-4b00-c062-000000000062",
       "name": "HTTP — HyDE Generate",
-      "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2,
-      "position": [1950, 600],
-      "credentials": { "openAIApi": { "id": "OPENAI_CREDENTIAL_ID", "name": "OpenAI account" } }
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1950,
+        600
+      ],
+      "credentials": {
+        "openAIApi": {
+          "id": "OPENAI_CREDENTIAL_ID",
+          "name": "OpenAI account"
+        }
+      }
     },
     {
       "parameters": {
-        "mode": "manual", "duplicateItem": false,
-        "assignments": { "assignments": [
-          { "name": "queryText", "value": "={{ $json.choices[0].message.content }}", "type": "string" },
-          { "name": "originalQuery", "value": "={{ $('Code — HyDE Prompt').item.json.originalQuery }}", "type": "string" },
-          { "name": "replyToken", "value": "={{ $('Code — Merge Queries').item.json.replyToken }}", "type": "string" },
-          { "name": "userId", "value": "={{ $('Code — Merge Queries').item.json.userId }}", "type": "string" }
-        ]}, "options": {}
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            {
+              "name": "queryText",
+              "value": "={{ $json.choices[0].message.content }}",
+              "type": "string"
+            },
+            {
+              "name": "originalQuery",
+              "value": "={{ $('Code — HyDE Prompt').item.json.originalQuery }}",
+              "type": "string"
+            },
+            {
+              "name": "replyToken",
+              "value": "={{ $('Code — Merge Queries').item.json.replyToken }}",
+              "type": "string"
+            },
+            {
+              "name": "userId",
+              "value": "={{ $('Code — Merge Queries').item.json.userId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
       },
       "id": "b0020001-0063-4b00-c063-000000000063",
       "name": "Set — HyDE Query",
-      "type": "n8n-nodes-base.set", "typeVersion": 3.4,
-      "position": [2200, 600]
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2200,
+        600
+      ]
     },
     {
       "parameters": {
@@ -251,98 +549,428 @@
       },
       "id": "b0020001-0070-4b00-c070-000000000070",
       "name": "AI Agent",
-      "type": "@n8n/n8n-nodes-langchain.agent", "typeVersion": 3.1,
-      "position": [2450, 600]
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        2450,
+        600
+      ]
     },
     {
-      "parameters": { "model": "gpt-4o", "options": {} },
+      "parameters": {
+        "model": "gpt-4o",
+        "options": {}
+      },
       "id": "b0020001-0071-4b00-c071-000000000071",
       "name": "OpenAI Chat Model",
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi", "typeVersion": 1,
-      "position": [2450, 900],
-      "credentials": { "openAIApi": { "id": "OPENAI_CREDENTIAL_ID", "name": "OpenAI account" } }
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [
+        2450,
+        900
+      ],
+      "credentials": {
+        "openAIApi": {
+          "id": "OPENAI_CREDENTIAL_ID",
+          "name": "OpenAI account"
+        }
+      }
     },
     {
       "parameters": {
         "mode": "retrieve-as-tool",
         "toolDescription": "Search the multimodal knowledge base. Returns documents with source_url for citation.",
-        "pineconeIndex": { "__rl": true, "value": "YOUR_PINECONE_INDEX", "mode": "id" },
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "YOUR_PINECONE_INDEX",
+          "mode": "id"
+        },
         "topK": 10,
         "options": {}
       },
       "id": "b0020001-0072-4b00-c072-000000000072",
       "name": "Pinecone Vector Store",
-      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone", "typeVersion": 1.3,
-      "position": [2550, 1050],
-      "credentials": { "pineconeApi": { "id": "PINECONE_CREDENTIAL_ID", "name": "Pinecone API" } }
-    },
-    {
-      "parameters": { "model": "text-embedding-3-small", "options": {} },
-      "id": "b0020001-0073-4b00-c073-000000000073",
-      "name": "Embeddings OpenAI",
-      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi", "typeVersion": 1,
-      "position": [2550, 1250],
-      "credentials": { "openAIApi": { "id": "OPENAI_CREDENTIAL_ID", "name": "OpenAI account" } }
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        2550,
+        1050
+      ],
+      "credentials": {
+        "pineconeApi": {
+          "id": "PINECONE_CREDENTIAL_ID",
+          "name": "Pinecone API"
+        }
+      }
     },
     {
       "parameters": {
-        "jsCode": "// Citation formatter: ensure output stays under LINE limit\nconst output = $json.output || '';\nconst truncated = output.length > 1900 ? output.substring(0, 1900) + '...' : output;\nreturn [{ json: { formattedReply: truncated, replyToken: $('Set — HyDE Query').item.json.replyToken } }];"
+        "model": "text-embedding-3-small",
+        "options": {}
+      },
+      "id": "b0020001-0073-4b00-c073-000000000073",
+      "name": "Embeddings OpenAI",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1,
+      "position": [
+        2550,
+        1250
+      ],
+      "credentials": {
+        "openAIApi": {
+          "id": "OPENAI_CREDENTIAL_ID",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "python",
+        "pythonCode": "j = _input.first().json\noutput = j.get(\"output\", \"\")\ntruncated = output[:1900] + \"...\" if len(output) > 1900 else output\nreply_token = _(\"Set — HyDE Query\").item.json.get(\"replyToken\", \"\")\nreturn [{\"json\": {\"formattedReply\": truncated, \"replyToken\": reply_token}}]"
       },
       "id": "b0020001-0080-4b00-c080-000000000080",
       "name": "Code — Citation Formatter",
-      "type": "n8n-nodes-base.code", "typeVersion": 2,
-      "position": [2700, 600]
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2700,
+        600
+      ]
     },
     {
       "parameters": {
-        "messages": { "values": [{ "text": "={{ $json.formattedReply }}" }] },
+        "messages": {
+          "values": [
+            {
+              "text": "={{ $json.formattedReply }}"
+            }
+          ]
+        },
         "replyToken": "={{ $json.replyToken }}"
       },
       "id": "b0020001-0090-4b00-c090-000000000090",
       "name": "LINE — Reply",
-      "type": "@aotoki/n8n-nodes-line-messaging.lineMessaging", "typeVersion": 1,
-      "position": [2950, 600],
-      "credentials": { "lineMessagingApi": { "id": "LINE_MESSAGING_CREDENTIAL_ID", "name": "LINE Messaging API" } }
+      "type": "@aotoki/n8n-nodes-line-messaging.lineMessaging",
+      "typeVersion": 1,
+      "position": [
+        2950,
+        600
+      ],
+      "credentials": {
+        "lineMessagingApi": {
+          "id": "LINE_MESSAGING_CREDENTIAL_ID",
+          "name": "LINE Messaging API"
+        }
+      }
     }
   ],
   "pinData": {},
   "connections": {
-    "Line Messaging Trigger": { "main": [[{ "node": "Code — Classify Message", "type": "main", "index": 0 }]] },
-    "Code — Classify Message": { "main": [[
-      { "node": "Route — Text", "type": "main", "index": 0 },
-      { "node": "Route — Image", "type": "main", "index": 0 },
-      { "node": "Route — Audio", "type": "main", "index": 0 },
-      { "node": "Route — Video", "type": "main", "index": 0 },
-      { "node": "Route — Unsupported", "type": "main", "index": 0 }
-    ]] },
-    "Route — Text": { "main": [[{ "node": "Code — Merge Queries", "type": "main", "index": 0 }]] },
-    "Route — Image": { "main": [[{ "node": "HTTP — Download Image", "type": "main", "index": 0 }]] },
-    "HTTP — Download Image": { "main": [[{ "node": "HTTP — OpenAI Vision", "type": "main", "index": 0 }]] },
-    "HTTP — OpenAI Vision": { "main": [[{ "node": "Set — Image Query", "type": "main", "index": 0 }]] },
-    "Set — Image Query": { "main": [[{ "node": "Code — Merge Queries", "type": "main", "index": 0 }]] },
-    "Route — Audio": { "main": [[{ "node": "HTTP — Download Audio", "type": "main", "index": 0 }]] },
-    "HTTP — Download Audio": { "main": [[{ "node": "HTTP — Whisper Audio", "type": "main", "index": 0 }]] },
-    "HTTP — Whisper Audio": { "main": [[{ "node": "Set — Audio Query", "type": "main", "index": 0 }]] },
-    "Set — Audio Query": { "main": [[{ "node": "Code — Merge Queries", "type": "main", "index": 0 }]] },
-    "Route — Video": { "main": [[{ "node": "HTTP — Download Video", "type": "main", "index": 0 }]] },
-    "HTTP — Download Video": { "main": [[{ "node": "HTTP — Whisper Video", "type": "main", "index": 0 }]] },
-    "HTTP — Whisper Video": { "main": [[{ "node": "Set — Video Query", "type": "main", "index": 0 }]] },
-    "Set — Video Query": { "main": [[{ "node": "Code — Merge Queries", "type": "main", "index": 0 }]] },
-    "Route — Unsupported": { "main": [[{ "node": "LINE — Reply Unsupported", "type": "main", "index": 0 }]] },
-    "Code — Merge Queries": { "main": [[{ "node": "Code — HyDE Prompt", "type": "main", "index": 0 }]] },
-    "Code — HyDE Prompt": { "main": [[{ "node": "HTTP — HyDE Generate", "type": "main", "index": 0 }]] },
-    "HTTP — HyDE Generate": { "main": [[{ "node": "Set — HyDE Query", "type": "main", "index": 0 }]] },
-    "Set — HyDE Query": { "main": [[{ "node": "AI Agent", "type": "main", "index": 0 }]] },
-    "OpenAI Chat Model": { "ai_languageModel": [[{ "node": "AI Agent", "type": "ai_languageModel", "index": 0 }]] },
-    "Pinecone Vector Store": { "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]] },
-    "Embeddings OpenAI": { "ai_embedding": [[{ "node": "Pinecone Vector Store", "type": "ai_embedding", "index": 0 }]] },
-    "AI Agent": { "main": [[{ "node": "Code — Citation Formatter", "type": "main", "index": 0 }]] },
-    "Code — Citation Formatter": { "main": [[{ "node": "LINE — Reply", "type": "main", "index": 0 }]] }
+    "Line Messaging Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code — Classify Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code — Classify Message": {
+      "main": [
+        [
+          {
+            "node": "Route — Text",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Route — Image",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Route — Audio",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Route — Video",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Route — Unsupported",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route — Text": {
+      "main": [
+        [
+          {
+            "node": "Code — Merge Queries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route — Image": {
+      "main": [
+        [
+          {
+            "node": "HTTP — Download Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP — Download Image": {
+      "main": [
+        [
+          {
+            "node": "HTTP — OpenAI Vision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP — OpenAI Vision": {
+      "main": [
+        [
+          {
+            "node": "Set — Image Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set — Image Query": {
+      "main": [
+        [
+          {
+            "node": "Code — Merge Queries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route — Audio": {
+      "main": [
+        [
+          {
+            "node": "HTTP — Download Audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP — Download Audio": {
+      "main": [
+        [
+          {
+            "node": "HTTP — Whisper Audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP — Whisper Audio": {
+      "main": [
+        [
+          {
+            "node": "Set — Audio Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set — Audio Query": {
+      "main": [
+        [
+          {
+            "node": "Code — Merge Queries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route — Video": {
+      "main": [
+        [
+          {
+            "node": "HTTP — Download Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP — Download Video": {
+      "main": [
+        [
+          {
+            "node": "HTTP — Whisper Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP — Whisper Video": {
+      "main": [
+        [
+          {
+            "node": "Set — Video Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set — Video Query": {
+      "main": [
+        [
+          {
+            "node": "Code — Merge Queries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route — Unsupported": {
+      "main": [
+        [
+          {
+            "node": "LINE — Reply Unsupported",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code — Merge Queries": {
+      "main": [
+        [
+          {
+            "node": "Code — HyDE Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code — HyDE Prompt": {
+      "main": [
+        [
+          {
+            "node": "HTTP — HyDE Generate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP — HyDE Generate": {
+      "main": [
+        [
+          {
+            "node": "Set — HyDE Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set — HyDE Query": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code — Citation Formatter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code — Citation Formatter": {
+      "main": [
+        [
+          {
+            "node": "LINE — Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
   },
   "active": false,
-  "settings": { "executionOrder": "v1" },
+  "settings": {
+    "executionOrder": "v1"
+  },
   "versionId": "enterprise-v1-flow-b",
-  "meta": { "templateCredsSetupCompleted": true },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
   "id": "FlowBEnterprise01",
   "tags": []
 }

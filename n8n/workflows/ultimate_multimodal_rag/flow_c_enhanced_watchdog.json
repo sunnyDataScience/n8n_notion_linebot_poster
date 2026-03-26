@@ -14,7 +14,9 @@
     },
     {
       "parameters": {
-        "jsCode": "return [{ json: {\n  workflowName: $json.workflow?.name || 'unknown',\n  errorMessage: $json.execution?.error?.message || 'unknown error',\n  timestamp: $now.toISO(),\n  executionId: String($json.execution?.id || 'unknown')\n}}];\n"
+        "mode": "runOnceForAllItems",
+        "language": "python",
+        "pythonCode": "j = _input.first().json\nworkflow_info = j.get(\"workflow\") or {}\nexecution_info = j.get(\"execution\") or {}\nerror_info = execution_info.get(\"error\") or {}\nreturn [{\"json\": {\n    \"workflowName\": workflow_info.get(\"name\", \"unknown\"),\n    \"errorMessage\": error_info.get(\"message\", \"unknown error\"),\n    \"timestamp\": _now.isoformat(),\n    \"executionId\": str(execution_info.get(\"id\", \"unknown\")),\n}}]"
       },
       "id": "af039b9a-f878-4892-96fb-9218267c38a1",
       "name": "Code — Extract Error",
@@ -145,7 +147,9 @@
     },
     {
       "parameters": {
-        "jsCode": "const results = $json.results || [];\nreturn results.map(page => {\n  const props = page.properties || {};\n  const title = props.Name?.title?.[0]?.plain_text || props.Name?.title?.[0]?.text?.content || '';\n  const status = props.Status?.select?.name || props.Status?.status?.name || '';\n  return {\n    json: {\n      pageId: page.id,\n      title,\n      status,\n      source: props.Source?.rich_text?.[0]?.plain_text || '',\n      originalPage: page\n    }\n  };\n});"
+        "mode": "runOnceForAllItems",
+        "language": "python",
+        "pythonCode": "j = _input.first().json\nresults = j.get(\"results\") or []\noutput = []\nfor page in results:\n    props = page.get(\"properties\") or {}\n    name_title = (props.get(\"Name\") or {}).get(\"title\") or []\n    title = \"\"\n    if name_title:\n        title = name_title[0].get(\"plain_text\", \"\") or (name_title[0].get(\"text\") or {}).get(\"content\", \"\")\n    status_sel = (props.get(\"Status\") or {}).get(\"select\") or {}\n    status_stat = (props.get(\"Status\") or {}).get(\"status\") or {}\n    status = status_sel.get(\"name\", \"\") or status_stat.get(\"name\", \"\")\n    source_rt = (props.get(\"Source\") or {}).get(\"rich_text\") or []\n    source = source_rt[0].get(\"plain_text\", \"\") if source_rt else \"\"\n    output.append({\"json\": {\n        \"pageId\": page.get(\"id\", \"\"),\n        \"title\": title,\n        \"status\": status,\n        \"source\": source,\n        \"originalPage\": page,\n    }})\nreturn output"
       },
       "id": "dafc7e94-a5f2-4efd-bea1-3801299d4ab8",
       "name": "Code — Normalize Pending Pages",
@@ -158,7 +162,9 @@
     },
     {
       "parameters": {
-        "jsCode": "return $input.all().map(item => ({\n  json: {\n    ...item.json,\n    reindexRequestedAt: $now.toISO()\n  }\n}));"
+        "mode": "runOnceForAllItems",
+        "language": "python",
+        "pythonCode": "items = _input.all()\nreturn [{\"json\": {**dict(item.json), \"reindexRequestedAt\": _now.isoformat()}} for item in items]"
       },
       "id": "8a700809-0a3a-4104-a0c9-d8a4ed47ef6c",
       "name": "Code — Prepare Reindex Input",
@@ -250,7 +256,9 @@
     },
     {
       "parameters": {
-        "jsCode": "return [\n  { json: { query: '去年迎新場地在哪裡租的？', topScore: 0.0 } },\n  { json: { query: '社費收支報告', topScore: 0.0 } },\n  { json: { query: '幹部交接清單', topScore: 0.0 } }\n];"
+        "mode": "runOnceForAllItems",
+        "language": "python",
+        "pythonCode": "return [\n    {\"json\": {\"query\": \"去年迎新場地在哪裡租的？\", \"topScore\": 0.0}},\n    {\"json\": {\"query\": \"社費收支報告\", \"topScore\": 0.0}},\n    {\"json\": {\"query\": \"幹部交接清單\", \"topScore\": 0.0}},\n]"
       },
       "id": "7749c857-f291-45da-a9df-e5814cd9c6bd",
       "name": "Code — Test Queries",
@@ -263,7 +271,9 @@
     },
     {
       "parameters": {
-        "jsCode": "const threshold = 0.7;\nconst items = $input.all();\nconst passed = items.filter(i => (i.json.topScore || 0) > threshold).length;\nconst failed = items.filter(i => (i.json.topScore || 0) <= threshold).map(i => i.json.query);\nlet report = `Weekly Quality Report\\nPassed: ${passed}/${items.length}`;\nif (failed.length) {\n  report += `\\nFailed:\\n${failed.map(q => `- ${q}`).join('\\n')}\\n\\n目前這裡仍是 placeholder，下一版再補 embedding + Pinecone query。`;\n} else {\n  report += '\\n\\nAll tests passed!';\n}\nreturn [{ json: { report } }];"
+        "mode": "runOnceForAllItems",
+        "language": "python",
+        "pythonCode": "items = _input.all()\nthreshold = 0.7\npassed = sum(1 for i in items if (i.json.get(\"topScore\") or 0) > threshold)\nfailed = [i.json.get(\"query\", \"\") for i in items if (i.json.get(\"topScore\") or 0) <= threshold]\nreport = f\"Weekly Quality Report\\nPassed: {passed}/{len(items)}\"\nif failed:\n    failed_list = \"\\n\".join(f\"- {q}\" for q in failed)\n    report += f\"\\nFailed:\\n{failed_list}\\n\\n目前這裡仍是 placeholder，下一版再補 embedding + Pinecone query。\"\nelse:\n    report += \"\\n\\nAll tests passed!\"\nreturn [{\"json\": {\"report\": report}}]"
       },
       "id": "be39a3f5-2206-4044-938b-f6f5352f00ba",
       "name": "Code — Compile Report",
@@ -360,7 +370,9 @@
     },
     {
       "parameters": {
-        "jsCode": "const results = $json.results || [];\nreturn results.map(page => {\n  const props = page.properties || {};\n  const title = props.Name?.title?.[0]?.plain_text || props.Name?.title?.[0]?.text?.content || '';\n  const status = props.Status?.select?.name || props.Status?.status?.name || '';\n  return {\n    json: {\n      pageId: page.id,\n      title,\n      status,\n      source: props.Source?.rich_text?.[0]?.plain_text || '',\n      originalPage: page\n    }\n  };\n});"
+        "mode": "runOnceForAllItems",
+        "language": "python",
+        "pythonCode": "j = _input.first().json\nresults = j.get(\"results\") or []\noutput = []\nfor page in results:\n    props = page.get(\"properties\") or {}\n    name_title = (props.get(\"Name\") or {}).get(\"title\") or []\n    title = \"\"\n    if name_title:\n        title = name_title[0].get(\"plain_text\", \"\") or (name_title[0].get(\"text\") or {}).get(\"content\", \"\")\n    status_sel = (props.get(\"Status\") or {}).get(\"select\") or {}\n    status_stat = (props.get(\"Status\") or {}).get(\"status\") or {}\n    status = status_sel.get(\"name\", \"\") or status_stat.get(\"name\", \"\")\n    source_rt = (props.get(\"Source\") or {}).get(\"rich_text\") or []\n    source = source_rt[0].get(\"plain_text\", \"\") if source_rt else \"\"\n    output.append({\"json\": {\n        \"pageId\": page.get(\"id\", \"\"),\n        \"title\": title,\n        \"status\": status,\n        \"source\": source,\n        \"originalPage\": page,\n    }})\nreturn output"
       },
       "id": "86b3492f-f24d-4595-96c0-67baa138f96f",
       "name": "Code — Normalize Failed Media",
@@ -373,7 +385,9 @@
     },
     {
       "parameters": {
-        "jsCode": "return $input.all().map(item => ({\n  json: {\n    ...item.json,\n    retryRequestedAt: $now.toISO()\n  }\n}));"
+        "mode": "runOnceForAllItems",
+        "language": "python",
+        "pythonCode": "items = _input.all()\nreturn [{\"json\": {**dict(item.json), \"retryRequestedAt\": _now.isoformat()}} for item in items]"
       },
       "id": "2de1deb1-0d62-4a9c-954b-29379188d28e",
       "name": "Code — Prepare Retry Input",
