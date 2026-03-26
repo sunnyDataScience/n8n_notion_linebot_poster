@@ -11,6 +11,7 @@ services:
       - N8N_LICENSE_KEY=b76dae67-9298-413e-b5b3-77fa94e368c1
       - N8N_EDITOR_BASE_URL=https://localhost:8444
       - WEBHOOK_URL=https://localhost:8444/
+      - N8N_TRUST_PROXY=true
     volumes:
       - n8n_storage:/home/node/.n8n
 
