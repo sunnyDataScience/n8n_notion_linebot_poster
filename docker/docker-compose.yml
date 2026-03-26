@@ -9,8 +9,8 @@ services:
     restart: always
     environment:
       - N8N_LICENSE_KEY=b76dae67-9298-413e-b5b3-77fa94e368c1
-      - N8N_EDITOR_BASE_URL=https://10.137.80.58:8443
-      - WEBHOOK_URL=https://10.137.80.58:8443/
+      - N8N_EDITOR_BASE_URL=https://localhost:8444
+      - WEBHOOK_URL=https://localhost:8444/
     volumes:
       - n8n_storage:/home/node/.n8n
 
@@ -19,7 +19,7 @@ services:
     restart: always
     ports:
       - "8088:80"   # For HTTP -> HTTPS redirect
-      - "8443:443"  # For HTTPS access
+      - "8444:443"  # For HTTPS access
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
       - ./nginx/certs:/etc/nginx/certs

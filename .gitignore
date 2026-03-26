@@ -1,3 +1,4 @@
 # Sensitive files
 .mcp.json
 .env
+docker/nginx/certs/
