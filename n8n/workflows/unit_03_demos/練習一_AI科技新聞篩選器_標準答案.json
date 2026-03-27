@@ -1,0 +1,248 @@
+{
+  "id": "workshop_practice_01",
+  "name": "練習一 — AI 科技新聞篩選器（標準答案）",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "p1-trigger-0001",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -608,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://technews.tw/feed/",
+        "options": {}
+      },
+      "id": "p1-http-0001",
+      "name": "GET — 科技新報 RSS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -304,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Step 3: Parse RSS XML, extract each <item>\nconst xml = $input.first().json.data;\nconst items = [];\nconst itemRegex = /<item>([\\s\\S]*?)<\\/item>/g;\nlet match;\n\nwhile ((match = itemRegex.exec(xml)) !== null) {\n  const block = match[1];\n\n  const title = (block.match(/<title>(.*?)<\\/title>/) || ['', ''])[1]\n    .replace(/<!\\[CDATA\\[|\\]\\]>/g, '');\n  const link = (block.match(/<link>(.*?)<\\/link>/) || ['', ''])[1];\n  const pubDate = (block.match(/<pubDate>(.*?)<\\/pubDate>/) || ['', ''])[1];\n\n  // Extract all <category> tags\n  const cats = [];\n  const catRegex = /<category><!\\[CDATA\\[(.*?)\\]\\]><\\/category>/g;\n  let catMatch;\n  while ((catMatch = catRegex.exec(block)) !== null) {\n    cats.push(catMatch[1]);\n  }\n\n  items.push({\n    title,\n    link,\n    pubDate,\n    categories: cats.join(', ')\n  });\n}\n\nreturn items.map(item => ({ json: item }));"
+      },
+      "id": "p1-code-0001",
+      "name": "Code — 解析 RSS XML",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "condition-ai-title",
+              "leftValue": "={{ $json.title }}",
+              "rightValue": "AI",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "condition-ai-cat",
+              "leftValue": "={{ $json.categories }}",
+              "rightValue": "AI",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "id": "p1-if-0001",
+      "name": "IF — 包含 AI？",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        304,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "set-title",
+              "name": "title",
+              "value": "={{ $json.title }}",
+              "type": "string"
+            },
+            {
+              "id": "set-link",
+              "name": "link",
+              "value": "={{ $json.link }}",
+              "type": "string"
+            },
+            {
+              "id": "set-categories",
+              "name": "categories",
+              "value": "={{ $json.categories }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "p1-set-0001",
+      "name": "Set — 整理輸出",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        608,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 練習一：AI 科技新聞篩選器（標準答案）\n\n**流程：**\n1. Manual Trigger 啟動\n2. HTTP GET 抓科技新報 RSS\n3. Code 解析 XML → 取出每篇文章\n4. IF 判斷標題或分類是否含「AI」\n5. Set 只保留 title / link / categories\n\n**驗收：**\n✅ IF true 分支有 AI 相關新聞\n✅ 最終只有 3 個欄位\n✅ false 分支不含 AI",
+        "height": 360,
+        "width": 340,
+        "color": 4
+      },
+      "id": "p1-sticky-main",
+      "name": "Sticky Note — 說明",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -976,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### Step 2: HTTP GET\n\nURL: `https://technews.tw/feed/`\n免認證，直接抓\n\n回傳一大坨 XML 字串\n→ 點 Output 看看長什麼樣",
+        "height": 260,
+        "color": 6
+      },
+      "id": "p1-sticky-http",
+      "name": "Sticky Note — HTTP",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -368,
+        608
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### Step 3: Code 解析\n\n用 regex 把 XML 裡的\n`<item>` 一個個挖出來\n\n從「一坨字串」變成\n「多筆結構化資料」\n\n這就是 ETL 的 E + T！",
+        "height": 260,
+        "color": 3
+      },
+      "id": "p1-sticky-code",
+      "name": "Sticky Note — Code",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -64,
+        608
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### Step 4: IF 篩選\n\n條件用 OR：\n- 標題含 AI\n- 分類含 AI\n\n符合 → true（保留）\n不符合 → false（丟掉）",
+        "height": 260,
+        "color": 5
+      },
+      "id": "p1-sticky-if",
+      "name": "Sticky Note — IF",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        240,
+        608
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### Step 5: Set 整理\n\n只保留 3 個欄位：\n- title（標題）\n- link（連結）\n- categories（分類）\n\n「Keep Only Set」= 丟掉多餘欄位",
+        "height": 292,
+        "color": 2
+      },
+      "id": "p1-sticky-set",
+      "name": "Sticky Note — Set",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        544,
+        512
+      ]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "GET — 科技新報 RSS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET — 科技新報 RSS": {
+      "main": [
+        [
+          {
+            "node": "Code — 解析 RSS XML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code — 解析 RSS XML": {
+      "main": [
+        [
+          {
+            "node": "IF — 包含 AI？",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF — 包含 AI？": {
+      "main": [
+        [
+          {
+            "node": "Set — 整理輸出",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9c10b22a58a4f5a4bf4bd3896160475e71228854bcdea2e0475e1358324e7bd5"
+  }
+}

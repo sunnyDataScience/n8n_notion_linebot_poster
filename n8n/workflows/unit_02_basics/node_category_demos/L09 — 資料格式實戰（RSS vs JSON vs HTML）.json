@@ -1,0 +1,284 @@
+{
+  "id": "workshop_L09",
+  "name": "L09 — 資料格式實戰（RSS vs JSON vs HTML）",
+  "description": null,
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "32a03c5f-ac12-4df4-9f9e-8213783c4143",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -784,
+        2656
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://technews.tw/feed/",
+        "options": {}
+      },
+      "id": "63c8d293-997c-4013-a222-4a9f34508803",
+      "name": "GET — 科技新報 RSS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -272,
+        2400
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://tw.rter.info/capi.php",
+        "options": {}
+      },
+      "id": "7ab17971-34ae-4b13-8c56-46b24b2a918b",
+      "name": "GET — 台幣匯率 JSON",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -272,
+        2656
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://www.ithome.com.tw/",
+        "options": {}
+      },
+      "id": "119ce30a-2d34-4e3b-9711-4bfcb4385549",
+      "name": "GET — iThome 首頁 HTML",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -272,
+        2912
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// RSS (XML) → Parse & Extract\n// RSS raw data is a big XML string in $input.first().json.data\nconst xml = $input.first().json.data;\n\n// Use regex to extract each <item>...</item>\nconst items = [];\nconst itemRegex = /<item>([\\s\\S]*?)<\\/item>/g;\nlet match;\n\nwhile ((match = itemRegex.exec(xml)) !== null) {\n  const block = match[1];\n\n  // Extract fields from each item\n  const title = block.match(/<title>(.*?)<\\/title>/)?.[1] || '';\n  const link = block.match(/<link>(.*?)<\\/link>/)?.[1] || '';\n  const pubDate = block.match(/<pubDate>(.*?)<\\/pubDate>/)?.[1] || '';\n  const creator = block.match(/<!\\[CDATA\\[(.*?)\\]\\]>/)?.[1] || '';\n\n  // Extract all categories\n  const cats = [];\n  const catRegex = /<category><!\\[CDATA\\[(.*?)\\]\\]><\\/category>/g;\n  let catMatch;\n  while ((catMatch = catRegex.exec(block)) !== null) {\n    cats.push(catMatch[1]);\n  }\n\n  items.push({\n    title: title.replace(/<!\\[CDATA\\[|\\]\\]>/g, ''),\n    link,\n    pubDate,\n    author: creator,\n    categories: cats.join(', ')\n  });\n}\n\nreturn items.map(item => ({ json: item }));"
+      },
+      "id": "a1b2c3d4-rss1-0001-0001-000000000001",
+      "name": "Extract — 解析 RSS XML",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        200,
+        2400
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// JSON → Filter & Reshape\n// The exchange rate API returns 200+ currencies\n// We only want the ones relevant to Taiwan students\n\nconst raw = $input.first().json;\n\n// Pick currencies we care about\nconst targets = [\n  { key: 'USDTWD', name: '美元→台幣' },\n  { key: 'USDJPY', name: '美元→日圓' },\n  { key: 'USDEUR', name: '美元→歐元' },\n  { key: 'USDKRW', name: '美元→韓元' },\n  { key: 'USDCNY', name: '美元→人民幣' },\n  { key: 'USDGBP', name: '美元→英鎊' },\n  { key: 'USDTHB', name: '美元→泰銖' },\n  { key: 'USDAUD', name: '美元→澳幣' },\n];\n\nconst results = targets\n  .filter(t => raw[t.key])\n  .map(t => ({\n    json: {\n      currency_pair: t.key,\n      display_name: t.name,\n      exchange_rate: raw[t.key].Exrate,\n      last_updated: raw[t.key].UTC\n    }\n  }));\n\nreturn results;"
+      },
+      "id": "a1b2c3d4-json-0001-0001-000000000002",
+      "name": "Extract — 篩選主要幣別",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        200,
+        2656
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// HTML → Extract article titles & links\n// iThome homepage HTML is unstructured — we need regex to dig out data\n\nconst html = $input.first().json.data;\n\n// iThome article pattern: <p class=\"title\"><a href=\"/news/...\">Title</a></p>\nconst articles = [];\nconst regex = /<p class=\"title\">\\s*<a href=\"(\\/news\\/\\d+)\">(.*?)<\\/a>/g;\nlet match;\n\nwhile ((match = regex.exec(html)) !== null) {\n  articles.push({\n    title: match[2].trim(),\n    url: 'https://www.ithome.com.tw' + match[1]\n  });\n}\n\n// Deduplicate by URL\nconst seen = new Set();\nconst unique = articles.filter(a => {\n  if (seen.has(a.url)) return false;\n  seen.add(a.url);\n  return true;\n});\n\nreturn unique.map((item, i) => ({\n  json: {\n    rank: i + 1,\n    title: item.title,\n    url: item.url\n  }\n}));"
+      },
+      "id": "a1b2c3d4-html-0001-0001-000000000003",
+      "name": "Extract — 挖出新聞標題",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        200,
+        2912
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## L09：資料格式實戰（Extract & Transform）\n### 爬取 → 清洗 → 轉換 完整流程\n\n**學習目標：**\n1. 三種格式的差異（結構化 vs 非結構化）\n2. 爬取後如何 Extract（擷取）有用資料\n3. 如何 Transform（轉換）成乾淨格式\n\n**三條路徑：**\n\n| 路徑 | 來源 | 格式 | Extract 難度 |\n|------|------|------|-------------|\n| 上 | 科技新報 | RSS | 中（XML 巢狀） |\n| 中 | tw.rter.info | JSON | 低（篩選即可）|\n| 下 | iThome | HTML | 高（要 regex）|\n\n**操作步驟：**\n1. 按 Execute Workflow 跑全部\n2. 點 GET 節點 → 看「原始資料」長什麼樣\n3. 點 Extract 節點 → 看「清洗後」變什麼樣\n4. 比較三條路徑的差異\n\n**結論：**\nJSON > RSS > HTML（能用 API 就別爬網頁）",
+        "height": 620,
+        "width": 540,
+        "color": 4
+      },
+      "id": "16d7777b-2b0e-451a-9fe4-27ff1adb9910",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1440,
+        2288
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### 1️⃣ GET：抓原始資料\n\nHTTP Request 節點\n只負責「抓回來」\n\n→ RSS 回來是 XML 字串\n→ JSON 回來是大物件\n→ HTML 回來是網頁原始碼\n\n⚠️ 原始資料通常\n又大又雜，不能直接用！",
+        "height": 240,
+        "width": 240,
+        "color": 6
+      },
+      "id": "975e0865-591c-409a-b9b9-60731402ccac",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -520,
+        2320
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### 2️⃣ EXTRACT：擷取有用欄位\n\n用 Code 節點做資料清洗：\n\n**RSS：** 用 regex 解析 XML\n→ 取出 title / link / date\n→ 從 40+ 欄位精簡成 5 欄\n\n**JSON：** 篩選 + 重新命名\n→ 200 種幣別只留 8 種\n→ 加上中文名稱\n\n**HTML：** regex 挖標籤內容\n→ 從幾千行 HTML 挖出標題\n→ 去重複、加編號",
+        "height": 340,
+        "width": 280,
+        "color": 3
+      },
+      "id": "f66a5f9b-fbbd-438e-84d3-730e97d604f6",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        104,
+        2320
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### RSS Extract 重點\n\n```javascript\n// XML 用 regex 挖 <item>\nconst regex = /<item>([\\s\\S]*?)<\\/item>/g;\n\n// 每個 item 再挖 title, link\ntitle = block.match(/<title>(.*?)<\\/title>/)\n```\n\n✅ 40 筆新聞 → 5 個乾淨欄位\n❌ XML 巢狀結構需要處理",
+        "height": 260,
+        "width": 260,
+        "color": 6
+      },
+      "id": "sticky-rss-extract",
+      "name": "Sticky Note — RSS",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        440,
+        2280
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### JSON Extract 重點\n\n```javascript\n// 200 種幣別篩選成 8 種\nconst targets = [\n  { key: 'USDTWD', name: '美元→台幣' },\n  ...\n];\n// 重新命名欄位\n```\n\n✅ 最簡單！篩選 + rename\n✅ 資料已經是結構化的",
+        "height": 260,
+        "width": 260,
+        "color": 3
+      },
+      "id": "sticky-json-extract",
+      "name": "Sticky Note — JSON",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        440,
+        2560
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### HTML Extract 重點\n\n```javascript\n// 從幾千行 HTML 挖標題\nconst regex = \n  /<p class=\"title\">.*?<a href=\"(.*?)\">(.*?)<\\/a>/g;\n\n// 去重複\nconst seen = new Set();\n```\n\n⚠️ 最難！依賴網頁結構\n⚠️ 網站改版就要重寫 regex",
+        "height": 280,
+        "width": 260,
+        "color": 5
+      },
+      "id": "sticky-html-extract",
+      "name": "Sticky Note — HTML",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        440,
+        2840
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### ETL 流程總結\n\n**E**xtract（擷取）：HTTP GET 抓原始資料\n**T**ransform（轉換）：Code 清洗 + 篩選\n**L**oad（載入）：輸出到下游節點\n\n這就是資料工程的核心！\n\n**資料格式選擇優先順序：**\n🥇 JSON API — 乾淨、結構化\n🥈 RSS Feed — 自動轉 JSON\n🥉 HTML 爬蟲 — 最後手段",
+        "height": 280,
+        "width": 260,
+        "color": 2
+      },
+      "id": "243ee32f-a548-42ff-acaa-3c1e13957930",
+      "name": "Sticky Note4",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -816,
+        2800
+      ]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "GET — 科技新報 RSS",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "GET — 台幣匯率 JSON",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "GET — iThome 首頁 HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET — 科技新報 RSS": {
+      "main": [
+        [
+          {
+            "node": "Extract — 解析 RSS XML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET — 台幣匯率 JSON": {
+      "main": [
+        [
+          {
+            "node": "Extract — 篩選主要幣別",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET — iThome 首頁 HTML": {
+      "main": [
+        [
+          {
+            "node": "Extract — 挖出新聞標題",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5c382041e9e21f3536f4e542bc076d9d20bdb81ee8b1cce212b601f3a071f8be"
+  },
+  "activeVersionId": null,
+  "versionCounter": 1,
+  "triggerCount": 0,
+  "versionMetadata": {
+    "name": null,
+    "description": null
+  }
+}

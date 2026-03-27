@@ -1,5 +1,6 @@
 {
-  "name": "[Unit 5 Demo] Leave Request Approval",
+  "id": "workshop_unit3_01",
+  "name": "[Unit 3 Demo] Leave Request Approval",
   "nodes": [
     {
       "parameters": {

@@ -1,5 +1,6 @@
 {
-  "name": "[Unit 5 Demo] Expense Report & Monthly Summary",
+  "id": "workshop_unit3_02",
+  "name": "[Unit 3 Demo] Expense Report & Monthly Summary",
   "nodes": [
     {
       "parameters": {

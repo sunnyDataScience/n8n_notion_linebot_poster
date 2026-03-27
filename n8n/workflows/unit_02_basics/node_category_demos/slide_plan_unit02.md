@@ -964,3 +964,154 @@ Day 5  ██████████  綜合演練
 | 23 | Code vs No-Code | L12-L13 | 左右對比 |
 | 24 | 全概念關係圖 | 附錄 A | 心智圖 |
 | 25 | 口訣 + 學習路線 | 附錄 E+F | 口訣 + 進程條 |
+
+---
+
+## 附錄：工作坊練習題（2 題）
+
+> 基於 L01–L09 所教內容設計，學生在 n8n 畫布上從零建置。
+> 預估每題 15–20 分鐘，含助教巡場時間。
+
+---
+
+### 練習一：AI 科技新聞篩選器
+
+**情境故事：**
+你是新創公司的 PM，老闆每天早上要你整理「跟 AI 有關的科技新聞」。
+與其每天手動瀏覽網站，不如讓 n8n 自動幫你篩選！
+
+**完成目標：**
+從科技新報 RSS 抓取新聞 → 只保留標題或分類含「AI」的文章 → 輸出乾淨的摘要清單
+
+**涵蓋知識點：**
+
+| 步驟 | 用到的概念 | 對應課程 |
+|------|-----------|---------|
+| 1. 手動觸發 | Manual Trigger | L01 |
+| 2. HTTP GET 抓 RSS | HTTP Request 節點、URL、RSS 格式 | L03、L09 |
+| 3. Code 節點解析 XML | Code 節點、JavaScript、資料轉換 | L06、L09 |
+| 4. IF 節點篩選 | 條件判斷、Expression 語法 | L02、L05 |
+| 5. Set 節點整理輸出 | 欄位重組、資料清洗 | L06 |
+
+**學生操作步驟：**
+
+```
+Manual Trigger
+      ↓
+HTTP Request（GET https://technews.tw/feed/）
+      ↓
+Code（解析 XML，取出 title / link / categories）
+      ↓
+IF（判斷：title 或 categories 包含 "AI"）
+  ├─ true  → Set（輸出：標題、連結、分類）
+  └─ false → 不處理
+```
+
+**提示卡片（助教視學生狀況發放）：**
+
+- 提示 1：HTTP Request 的 URL 填 `https://technews.tw/feed/`，不需要改其他設定
+- 提示 2：RSS 回來的是 XML 字串，藏在 `$input.first().json.data` 裡面
+- 提示 3：Code 節點可以用 regex `/<item>([\s\S]*?)<\/item>/g` 把每篇文章挖出來
+- 提示 4：IF 節點的條件可以用 `{{ $json.title.includes("AI") || $json.categories.includes("AI") }}`
+- 提示 5：Set 節點勾選「Keep Only Set」，只保留你要的 3 個欄位
+
+**驗收標準：**
+- ✅ 執行後 IF 的 true 分支有輸出（至少 3–5 篇 AI 相關新聞）
+- ✅ 最終輸出只有 title、link、categories 三個欄位
+- ✅ false 分支的文章標題都不含 AI
+
+**延伸挑戰（完成太快的同學）：**
+- 把 Manual Trigger 換成 Schedule Trigger，設定每天早上 9:00 自動執行（L04）
+- 在 Set 節點加一個欄位 `fetched_at`，值是 `{{ $now.format("YYYY-MM-DD HH:mm") }}`
+
+---
+
+### 練習二：匯率警報看板
+
+**情境故事：**
+你計劃暑假去日本旅遊，想盯著日圓匯率。
+當美元兌日圓超過 155（日圓貶值 = 換匯划算）時，產生一條「好消息」提醒；
+否則產生「再等等」提醒。順便把台幣、韓元的匯率一起整理出來。
+
+**完成目標：**
+抓取即時匯率 → 篩選台幣 / 日圓 / 韓元 → 判斷日圓是否超過門檻 → 輸出結果
+
+**涵蓋知識點：**
+
+| 步驟 | 用到的概念 | 對應課程 |
+|------|-----------|---------|
+| 1. 手動觸發 | Manual Trigger | L01 |
+| 2. HTTP GET 抓匯率 | HTTP Request 節點、JSON API | L03、L09 |
+| 3. Code 節點篩選 | Code 節點、物件取值、陣列操作 | L02、L06 |
+| 4. IF 節點判斷 | 數值比較、Expression | L02、L05 |
+| 5. Set 節點格式化 | 欄位組合、文字串接 | L06 |
+
+**學生操作步驟：**
+
+```
+Manual Trigger
+      ↓
+HTTP Request（GET https://tw.rter.info/capi.php）
+      ↓
+Code（從 200+ 幣別中取出 USDJPY、USDTWD、USDKRW）
+      ↓
+IF（判斷：USDJPY 匯率 > 155）
+  ├─ true  → Set（輸出：「🎌 好消息！日圓便宜了，現在 1 USD = ¥{{匯率}}」）
+  └─ false → Set（輸出：「⏳ 再等等，日圓還沒到甜蜜點，現在 1 USD = ¥{{匯率}}」）
+```
+
+**提示卡片（助教視學生狀況發放）：**
+
+- 提示 1：HTTP Request 的 URL 填 `https://tw.rter.info/capi.php`，這個 API 不需要認證
+- 提示 2：回傳的 JSON 是一個大物件，日圓匯率在 `$json.USDJPY.Exrate`
+- 提示 3：Code 節點範例 —
+  ```javascript
+  const raw = $input.first().json;
+  return [{
+    json: {
+      jpy_rate: raw.USDJPY.Exrate,
+      twd_rate: raw.USDTWD.Exrate,
+      krw_rate: raw.USDKRW.Exrate,
+      updated: raw.USDJPY.UTC
+    }
+  }];
+  ```
+- 提示 4：IF 條件填 `{{ $json.jpy_rate > 155 }}`
+- 提示 5：Set 節點用 Expression 組文字 — `日圓匯率 {{ $json.jpy_rate }}，台幣 {{ $json.twd_rate }}`
+
+**驗收標準：**
+- ✅ 執行後 Code 節點輸出包含 jpy_rate、twd_rate、krw_rate 三個數值
+- ✅ IF 節點根據當前匯率正確走 true 或 false 分支
+- ✅ 最終 Set 節點輸出包含人類可讀的提醒訊息
+
+**延伸挑戰（完成太快的同學）：**
+- 加一個 Switch 節點（L05），根據匯率區間輸出不同訊息：< 145「太貴」、145–155「普通」、> 155「便宜」
+- 在 Code 節點多加幾個幣別（EUR、THB、GBP），做成完整的旅遊匯率看板
+- 把結果用 Fan-out 同時送到兩個 Set 節點，模擬「同時通知 LINE + Email」（L08）
+
+---
+
+### 練習題設計原則
+
+| 原則 | 說明 |
+|------|------|
+| **真實資料** | 使用台灣學生熟悉的網站和 API（科技新報、即時匯率） |
+| **免認證** | 兩個 API 都不需要 API Key，降低環境設定門檻 |
+| **漸進提示** | 5 張提示卡片由易到難，助教視學生卡關程度逐步釋放 |
+| **明確驗收** | 每題 3 個 checkbox，學生和助教都能快速確認是否完成 |
+| **有延伸** | 進度快的同學有額外挑戰，不會無聊等待 |
+| **覆蓋完整** | 兩題合計覆蓋 L01–L09 的核心概念（見下表） |
+
+**兩題覆蓋度對照：**
+
+| 課程 | 概念 | 練習一 | 練習二 |
+|------|------|:------:|:------:|
+| L01 | Workflow 基礎、Manual Trigger | ✅ | ✅ |
+| L02 | Expression 語法、JSON 取值 | ✅ | ✅ |
+| L03 | HTTP Request、GET 方法 | ✅ | ✅ |
+| L04 | Schedule Trigger | 延伸 | — |
+| L05 | IF 條件判斷 | ✅ | ✅ |
+| L06 | Set 節點、Code 節點 | ✅ | ✅ |
+| L07 | 認證概念 | — | （API 免認證，但可口頭補充） |
+| L08 | Fan-out 整合 | — | 延伸 |
+| L09 | RSS/JSON/HTML 格式、ETL | ✅ | ✅ |

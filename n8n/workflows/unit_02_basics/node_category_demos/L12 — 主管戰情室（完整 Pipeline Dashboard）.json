@@ -1,0 +1,291 @@
+{
+  "id": "workshop_L12",
+  "name": "L12 — 主管戰情室（完整 Pipeline Dashboard）",
+  "description": null,
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "884fab7e-54dc-4dea-9380-3d9a32a51859",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -912,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "numberOfRecords": 50
+      },
+      "id": "1ee90307-b043-4820-b124-fb522bf060db",
+      "name": "Fake Sales",
+      "type": "n8n-nodes-fake-sales.fakeSales",
+      "typeVersion": 1,
+      "position": [
+        -672,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "weightedAmount",
+              "value": "={{ Math.round($json.amount * $json.probability / 100) }}",
+              "type": "number"
+            },
+            {
+              "id": "2",
+              "name": "daysToClose",
+              "value": "={{ Math.ceil((new Date($json.expectedCloseDate) - new Date()) / (1000*60*60*24)) }}",
+              "type": "number"
+            },
+            {
+              "id": "3",
+              "name": "isOverdue",
+              "value": "={{ new Date($json.expectedCloseDate) < new Date() && $json.stage !== '成交' }}",
+              "type": "boolean"
+            },
+            {
+              "id": "4",
+              "name": "riskLevel",
+              "value": "={{ ($json.stage !== '成交' && new Date($json.expectedCloseDate) < new Date()) ? '高' : ($json.amount > 1000000 && $json.probability < 40) ? '高' : ($json.amount > 500000 && $json.probability < 55) ? '中' : '低' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "aa7e2f1e-4b53-498b-9f26-dcc65dbbebff",
+      "name": "Enrich — 加權+風險",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -432,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "language": "pythonNative",
+        "pythonCode": "# 1. 換成新版的 _items\nitems = _items\n\n# 為了讓下面的程式碼更簡潔，寫一個小幫手函式來安全取得 json 字典\ndef get_j(item):\n    return item.get('json', {})\n\n# 2. 篩選高風險與逾期案件，並依金額排序（取前 10 筆）\nrisky = sorted(\n    [i for i in items if get_j(i).get('riskLevel') == '高' or get_j(i).get('isOverdue')],\n    key=lambda i: get_j(i).get('amount', 0),\n    reverse=True\n)[:10]\n\n# 3. 整理 Top 10 的詳細資訊，全面改用 .get() 給予預設值，防止 KeyError\ntop_risk = [{\n    'id': get_j(i).get('id', 'Unknown'), \n    'customer': get_j(i).get('customer', 'Unknown'),\n    'salesRep': get_j(i).get('salesRep', 'Unknown'), \n    'amount': get_j(i).get('amount', 0),\n    'probability': get_j(i).get('probability', 0),\n    'daysToClose': get_j(i).get('daysToClose', 0),\n    'riskLevel': get_j(i).get('riskLevel', 'Unknown')\n} for i in risky]\n\n# 4. 回傳最終的風險報告統計\nreturn [{'json': {\n    'reportType': 'deal_risk',\n    'totalRiskDeals': sum(1 for i in items if get_j(i).get('riskLevel') == '高'),\n    'overdueDeals': sum(1 for i in items if get_j(i).get('isOverdue')),\n    'topRiskDeals': top_risk\n}}]"
+      },
+      "id": "2ee288fb-4432-4528-adc9-c23e2f0d65d7",
+      "name": "A — 風險偵測",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -144,
+        -48
+      ]
+    },
+    {
+      "parameters": {
+        "language": "pythonNative",
+        "pythonCode": "# 1. 取代 _input.all()\nitems = _items\nby_rep = {}\n\nfor item in items:\n    # 2. 改用 .get(\"json\", {}) 取值\n    r = item.get('json', {})\n    \n    # 3. 使用 .get() 並給予預設值，避免 KeyError\n    rep = r.get('salesRep', 'Unknown')\n    \n    if rep not in by_rep:\n        by_rep[rep] = {\n            'salesRep': rep, \n            'department': r.get('department', 'Unknown'), \n            'dealCount': 0, \n            'totalAmount': 0, \n            'weightedAmount': 0, \n            'wonDeals': 0\n        }\n        \n    s = by_rep[rep]\n    s['dealCount'] += 1\n    s['totalAmount'] += r.get('amount', 0)\n    s['weightedAmount'] += r.get('weightedAmount', 0)\n    \n    if r.get('stage') == '成交':\n        s['wonDeals'] += 1\n\n# 依加權金額由高到低排序業務名單\nreps = sorted(by_rep.values(), key=lambda x: x['weightedAmount'], reverse=True)\n\nreturn [{'json': {'reportType': 'rep_kpi', 'reps': reps}}]"
+      },
+      "id": "944c4205-70df-45d9-9f56-449ccbe91d96",
+      "name": "B — 業務 KPI",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -144,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "language": "pythonNative",
+        "pythonCode": "# 1. 取代 _input.all()\nitems = _items\nby_region = {}\nby_cat = {}\n\nfor item in items:\n    # 2. 安全地取得 json 字典\n    r = item.get('json', {})\n    \n    # 統計地區 (Region)\n    region = r.get('region', '未知')\n    if region not in by_region:\n        by_region[region] = {'region': region, 'dealCount': 0, 'totalAmount': 0, 'weightedAmount': 0}\n        \n    by_region[region]['dealCount'] += 1\n    by_region[region]['totalAmount'] += r.get('amount', 0)\n    by_region[region]['weightedAmount'] += r.get('weightedAmount', 0)\n\n    # 統計分類 (Category)\n    cat = r.get('category', '未知')\n    if cat not in by_cat:\n        by_cat[cat] = {'category': cat, 'dealCount': 0, 'totalAmount': 0, 'weightedAmount': 0}\n        \n    by_cat[cat]['dealCount'] += 1\n    by_cat[cat]['totalAmount'] += r.get('amount', 0)\n    by_cat[cat]['weightedAmount'] += r.get('weightedAmount', 0)\n\n# 依加權金額由高到低排序地區與分類\nregions = sorted(by_region.values(), key=lambda x: x['weightedAmount'], reverse=True)\ncategories = sorted(by_cat.values(), key=lambda x: x['weightedAmount'], reverse=True)\n\nreturn [{'json': {'reportType': 'market', 'regions': regions, 'categories': categories}}]"
+      },
+      "id": "9e104bd7-097f-4ab8-bf52-3dc734da3d31",
+      "name": "C — 區域產品",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -144,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "id": "518c89b6-6f2e-49d8-a63b-aa23919f8474",
+      "name": "Merge 1",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        112,
+        64
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "id": "f24c4c6e-04a8-46eb-bf34-b53ddfe079fe",
+      "name": "Merge 2",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        336,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 取得所有資料字典\nconst data = $input.all().map(i => i.json || {});\n\n// 抓取各個維度的報表資料\nconst risk = data.find(r => r.reportType === 'deal_risk') || {};\nconst rep = data.find(r => r.reportType === 'rep_kpi') || {};\nconst market = data.find(r => r.reportType === 'market') || {};\n\nconst reps = rep.reps || [];\nconst regions = market.regions || [];\nconst top_rep = reps.length > 0 ? reps[0] : null;\n\n// 格式化當前時間 (YYYY-MM-DD HH:mm)\nconst now = new Date();\nconst dateStr = now.getFullYear() + '-' + \n                String(now.getMonth() + 1).padStart(2, '0') + '-' + \n                String(now.getDate()).padStart(2, '0') + ' ' + \n                String(now.getHours()).padStart(2, '0') + ':' + \n                String(now.getMinutes()).padStart(2, '0');\n\nconst lines = [\n    '== 主管 Pipeline 戰情報告 ==',\n    `報告時間：${dateStr}`,\n    '',\n    `高風險：${risk.totalRiskDeals || 0} 筆`,\n    `已逾期：${risk.overdueDeals || 0} 筆`,\n    '',\n    '-- 業務排行 --'\n];\n\n// 處理業務排行 (前5名)，並加上千分位逗號\nreps.slice(0, 5).forEach((r, i) => {\n    lines.push(`${i + 1}. ${r.salesRep || 'Unknown'} — ${r.dealCount || 0}筆 加權$${Number(r.weightedAmount || 0).toLocaleString()}`);\n});\n\nlines.push('');\nlines.push('-- 區域 --');\nregions.forEach(r => {\n    lines.push(`${r.region || 'Unknown'}：${r.dealCount || 0}筆 $${Number(r.weightedAmount || 0).toLocaleString()}`);\n});\n\nlines.push('');\nlines.push('-- 建議 --');\nlines.push((risk.totalRiskDeals || 0) > 5 ? '高風險超過5筆，建議召開 deal review' : '風險可控');\nif (top_rep) {\n    lines.push(`MVP：${top_rep.salesRep || 'Unknown'}`);\n}\n\nreturn [{\n    json: {\n        generatedAt: now.toISOString(),\n        executiveReport: lines.join('\\n'),\n        detail: { risk, rep, market }\n    }\n}];"
+      },
+      "id": "37ec0491-f5fd-40de-869e-0c7c81f6b444",
+      "name": "Executive Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        576,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## L12：主管戰情室（Python 版）\n### 綜合演練 — 完整 Pipeline Dashboard\n\n**所有 Code 節點都用 Python！**\n\n**架構：**\nFake Sales (50筆) → Enrich\n  ├→ A 風險偵測 (Python)\n  ├→ B 業務 KPI (Python)\n  └→ C 區域產品 (Python)\n    → Merge → Executive Summary (Python)",
+        "height": 340,
+        "width": 560,
+        "color": 4
+      },
+      "id": "4b5fa3c0-ecb4-488e-913b-0ac90a50623f",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -928,
+        -208
+      ]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fake Sales",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fake Sales": {
+      "main": [
+        [
+          {
+            "node": "Enrich — 加權+風險",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enrich — 加權+風險": {
+      "main": [
+        [
+          {
+            "node": "A — 風險偵測",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "B — 業務 KPI",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "C — 區域產品",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "A — 風險偵測": {
+      "main": [
+        [
+          {
+            "node": "Merge 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "B — 業務 KPI": {
+      "main": [
+        [
+          {
+            "node": "Merge 1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge 1": {
+      "main": [
+        [
+          {
+            "node": "Merge 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "C — 區域產品": {
+      "main": [
+        [
+          {
+            "node": "Merge 2",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge 2": {
+      "main": [
+        [
+          {
+            "node": "Executive Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5c382041e9e21f3536f4e542bc076d9d20bdb81ee8b1cce212b601f3a071f8be"
+  },
+  "activeVersionId": null,
+  "versionCounter": 1,
+  "triggerCount": 0,
+  "versionMetadata": {
+    "name": null,
+    "description": null
+  }
+}

@@ -1,15 +1,19 @@
 {
+  "id": "workshop_n8n_example",
   "name": "n8n_example",
+  "description": null,
+  "active": false,
+  "isArchived": false,
   "nodes": [
     {
       "parameters": {},
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
-        -16,
-        -160
+        3504,
+        2064
       ],
-      "id": "dc23a57b-cdd0-4d2c-b7f7-7420afb1a486",
+      "id": "ce6d7122-e66a-4483-bf2d-337b9d904186",
       "name": "When clicking ‘Execute workflow’"
     },
     {
@@ -30,17 +34,11 @@
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
       "position": [
-        192,
-        -160
+        3712,
+        2064
       ],
-      "id": "bcdb1dc4-1eaa-48d0-9f77-28d60c26a808",
-      "name": "Search files and folders",
-      "credentials": {
-        "googleDriveOAuth2Api": {
-          "id": "cdvwZOttwh96xFdW",
-          "name": "Google Drive account"
-        }
-      }
+      "id": "82bebaa2-f486-4ead-9837-b10f2733018d",
+      "name": "Search files and folders"
     },
     {
       "parameters": {
@@ -55,17 +53,11 @@
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
       "position": [
-        368,
-        -160
+        3888,
+        2064
       ],
-      "id": "a1e14fe3-37b0-4ebd-8d31-e51512852554",
-      "name": "Download file",
-      "credentials": {
-        "googleDriveOAuth2Api": {
-          "id": "cdvwZOttwh96xFdW",
-          "name": "Google Drive account"
-        }
-      }
+      "id": "92e8c16f-50e5-4758-9745-dedc16858341",
+      "name": "Download file"
     },
     {
       "parameters": {
@@ -74,10 +66,10 @@
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        544,
-        -160
+        4064,
+        2064
       ],
-      "id": "d1c23030-24aa-42d3-84e3-359ffd335f26",
+      "id": "4462468d-bba2-40b8-8378-fc097aa6cbf0",
       "name": "Loop Over Items"
     },
     {
@@ -94,17 +86,11 @@
       "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
       "typeVersion": 1.3,
       "position": [
-        768,
-        -160
+        4288,
+        2064
       ],
-      "id": "d40a19cb-9c09-4a11-9b2f-2626d7a822f2",
-      "name": "Pinecone Vector Store",
-      "credentials": {
-        "pineconeApi": {
-          "id": "HugTgLBXHEiLBDnq",
-          "name": "PineconeApi account"
-        }
-      }
+      "id": "32a84675-e12c-4bdc-a3ca-82b051a80d35",
+      "name": "Pinecone Vector Store"
     },
     {
       "parameters": {
@@ -115,10 +101,10 @@
       "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
       "typeVersion": 1.1,
       "position": [
-        736,
-        224
+        4256,
+        2448
       ],
-      "id": "d16e78d3-481e-41e9-8a07-71be703cbe63",
+      "id": "28df77f1-4eb2-4d5e-be1a-d993275114f5",
       "name": "Default Data Loader"
     },
     {
@@ -129,10 +115,10 @@
       "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
       "typeVersion": 1,
       "position": [
-        736,
-        384
+        4256,
+        2608
       ],
-      "id": "ccadba75-0380-45af-9109-dc4d6648d35a",
+      "id": "bbbf3d76-b0a3-4875-be74-4b201af89203",
       "name": "Recursive Character Text Splitter"
     },
     {
@@ -142,33 +128,27 @@
       "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
       "typeVersion": 1,
       "position": [
-        768,
-        64
+        4288,
+        2288
       ],
-      "id": "d9099ebe-9997-47dc-8c12-4e15e32e2a46",
-      "name": "Embeddings Google Gemini",
-      "credentials": {
-        "googlePalmApi": {
-          "id": "dmywV6bNQSsQoY0w",
-          "name": "Google Gemini(PaLM) Api account"
-        }
-      }
+      "id": "6a8a4575-bf13-4906-a8f0-e63eaf90a330",
+      "name": "Embeddings Google Gemini"
     },
     {
       "parameters": {
         "promptType": "define",
         "text": "={{ $json.message.text }}",
         "options": {
-          "systemMessage": "使用繁體中文回答"
+          "systemMessage": "你是一個知識庫問答助手，負責根據檢索到的文件內容回答使用者問題。\n\n## 核心規則\n1. **僅根據檢索到的文件內容回答**，不要憑空編造。\n2. **必須標注資料來源**：每段回答後附上參考出處。\n3. 使用**繁體中文**回答。\n4. 如果檢索結果中找不到相關資訊，誠實回答「目前知識庫中沒有相關資料」，不要猜測。\n\n## 回答格式\n請依照以下格式回覆：\n\n**回答：**\n[根據檢索內容整理的回答]\n\n**參考來源：**\n- 📄 [文件標題或頁面名稱]（來源：Google Drive / Notion）\n- 📄 [文件標題或頁面名稱]（來源：Google Drive / Notion）\n\n## 注意事項\n- 當多份文件提及同一主題時，整合各來源資訊並分別標注。\n- 若使用者問題模糊，先簡要回答，再追問是否需要更詳細的資訊。\n- 引用時盡量提供文件的具體段落或重點，幫助使用者快速定位原文。"
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        176,
-        624
+        3696,
+        2848
       ],
-      "id": "ef148f1c-cf30-4add-be87-fcfe4003267d",
+      "id": "9c0c5368-15b6-4c72-94ca-a4869a84897c",
       "name": "AI Agent"
     },
     {
@@ -178,22 +158,16 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1,
       "position": [
-        176,
-        832
+        3696,
+        3056
       ],
-      "id": "50af66e5-8fd6-49fc-af10-c3c137720586",
-      "name": "Google Gemini Chat Model",
-      "credentials": {
-        "googlePalmApi": {
-          "id": "dmywV6bNQSsQoY0w",
-          "name": "Google Gemini(PaLM) Api account"
-        }
-      }
+      "id": "849a84ff-86ba-45d3-97c2-77478d5a7b76",
+      "name": "Google Gemini Chat Model"
     },
     {
       "parameters": {
         "mode": "retrieve-as-tool",
-        "toolDescription": "Provide some Info.",
+        "toolDescription": "Search the knowledge base for relevant documents. This tool contains indexed content from Google Drive files and Notion pages. Use this tool whenever the user asks a question that may be answered by the stored documents. The retrieved results include document content and metadata such as page titles, source type, and creation dates. Always use this tool before answering knowledge-related questions.",
         "pineconeIndex": {
           "__rl": true,
           "value": "n8n",
@@ -206,17 +180,11 @@
       "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
       "typeVersion": 1.3,
       "position": [
-        240,
-        976
+        3760,
+        3200
       ],
-      "id": "d1fb57c0-e0a9-4ec5-a2bb-b3c9a8f6655b",
-      "name": "Pinecone Vector Store1",
-      "credentials": {
-        "pineconeApi": {
-          "id": "HugTgLBXHEiLBDnq",
-          "name": "PineconeApi account"
-        }
-      }
+      "id": "f6e067e6-7e29-4c6e-8f2b-d3269ae8cbff",
+      "name": "Pinecone Vector Store1"
     },
     {
       "parameters": {
@@ -225,17 +193,11 @@
       "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
       "typeVersion": 1,
       "position": [
-        240,
-        1168
+        3760,
+        3392
       ],
-      "id": "8577536f-2994-4409-9ef2-52dfdfbcdcc7",
-      "name": "Embeddings Google Gemini1",
-      "credentials": {
-        "googlePalmApi": {
-          "id": "dmywV6bNQSsQoY0w",
-          "name": "Google Gemini(PaLM) Api account"
-        }
-      }
+      "id": "bd816d39-ab99-4ead-af70-8ee56c04cb7b",
+      "name": "Embeddings Google Gemini1"
     },
     {
       "parameters": {
@@ -246,11 +208,11 @@
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        -64,
-        544
+        3456,
+        2768
       ],
       "typeVersion": 1,
-      "id": "9e6a7568-aba9-449f-a661-35a64134d5dd",
+      "id": "45e3afe5-1160-4010-884a-ea7b623aaacb",
       "name": "Sticky Note"
     },
     {
@@ -261,11 +223,11 @@
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        -64,
-        -256
+        3456,
+        1968
       ],
       "typeVersion": 1,
-      "id": "c0146776-505c-4e3e-8b13-4c4bd541e64a",
+      "id": "e3efb581-7fa2-42c9-90d2-242980680d2f",
       "name": "Sticky Note1"
     },
     {
@@ -277,18 +239,12 @@
       "type": "@aotoki/n8n-nodes-line-messaging.lineMessagingTrigger",
       "typeVersion": 1,
       "position": [
-        -16,
-        624
+        3504,
+        2848
       ],
-      "id": "f639b79a-9489-4b5e-b389-5aef4e6871ca",
+      "id": "60b385a2-da13-4a86-8a04-325cb1d6ec2f",
       "name": "Line Messaging Trigger",
-      "webhookId": "f8ea82b4-abd6-46d6-8de9-4267f1b07679",
-      "credentials": {
-        "lineMessagingApi": {
-          "id": "ssJ8HCX74TuSmoot",
-          "name": "Line Messaging account"
-        }
-      }
+      "webhookId": "f8ea82b4-abd6-46d6-8de9-4267f1b07679"
     },
     {
       "parameters": {
@@ -304,29 +260,23 @@
       "type": "@aotoki/n8n-nodes-line-messaging.lineMessaging",
       "typeVersion": 1,
       "position": [
-        496,
-        624
+        4016,
+        2848
       ],
-      "id": "a2acd469-8e09-4872-a192-2eb6624fd1c3",
-      "name": "Line Messaging",
-      "credentials": {
-        "lineMessagingApi": {
-          "id": "ssJ8HCX74TuSmoot",
-          "name": "Line Messaging account"
-        }
-      }
+      "id": "01c9ed56-90ec-4836-8503-169cd3a1d029",
+      "name": "Line Messaging"
     },
     {
       "parameters": {
         "chunkSize": 256,
         "chunkOverlap": 30
       },
-      "id": "5f30cd17-e9b7-4a9d-a20d-75832309f9f2",
+      "id": "0ee8d628-f802-4830-851a-736ffa7fcd0d",
       "name": "Token Splitter",
       "type": "@n8n/n8n-nodes-langchain.textSplitterTokenSplitter",
       "position": [
-        1856,
-        352
+        5376,
+        2576
       ],
       "typeVersion": 1
     },
@@ -348,20 +298,14 @@
         },
         "simple": false
       },
-      "id": "a58c9828-656e-47be-85ea-d8aa8cf2af80",
+      "id": "4245f230-910b-4617-b163-37de7176856b",
       "name": "Notion - Page Added Trigger",
       "type": "n8n-nodes-base.notionTrigger",
       "position": [
-        1120,
-        -176
+        4640,
+        2048
       ],
-      "typeVersion": 1,
-      "credentials": {
-        "notionApi": {
-          "id": "4Lgcw3P0IFbjArgd",
-          "name": "Notion account"
-        }
-      }
+      "typeVersion": 1
     },
     {
       "parameters": {
@@ -374,21 +318,15 @@
         },
         "returnAll": true
       },
-      "id": "fd2c6f05-0210-4944-872a-7c38c0182b5f",
+      "id": "ac21cec9-6423-4053-b508-92f342383679",
       "name": "Notion - Retrieve Page Content",
       "type": "n8n-nodes-base.notion",
       "position": [
-        1296,
-        -176
+        4816,
+        2048
       ],
       "typeVersion": 2.2,
-      "alwaysOutputData": false,
-      "credentials": {
-        "notionApi": {
-          "id": "4Lgcw3P0IFbjArgd",
-          "name": "Notion account"
-        }
-      }
+      "alwaysOutputData": false
     },
     {
       "parameters": {
@@ -423,12 +361,12 @@
         },
         "options": {}
       },
-      "id": "b6566c3d-3eee-408c-90b1-6355fccedeae",
+      "id": "700b1099-61dd-40e6-9c4f-379bcba5829d",
       "name": "Filter Non-Text Content",
       "type": "n8n-nodes-base.filter",
       "position": [
-        1488,
-        -176
+        5008,
+        2048
       ],
       "typeVersion": 2
     },
@@ -447,12 +385,12 @@
           "outputFormat": "separateItems"
         }
       },
-      "id": "6f2bad97-3bb7-4b96-8fd2-62cffca0aaf5",
+      "id": "9b16b6f5-5d9e-4e85-853a-9b18fd19e6f8",
       "name": "Summarize - Concatenate Notion's blocks content",
       "type": "n8n-nodes-base.summarize",
       "position": [
-        1680,
-        -176
+        5200,
+        2048
       ],
       "typeVersion": 1
     },
@@ -479,12 +417,12 @@
           }
         }
       },
-      "id": "24ffb1d9-896d-4998-b8b7-0fda7af18500",
+      "id": "ff965bf0-2cf7-4bdb-9b85-8215f95d7845",
       "name": "Create metadata and load content",
       "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
       "position": [
-        1856,
-        160
+        5376,
+        2384
       ],
       "typeVersion": 1
     },
@@ -492,20 +430,14 @@
       "parameters": {
         "modelName": "models/gemini-embedding-001"
       },
-      "id": "3f771a43-5bff-46c5-9604-2e7a8f75e5ec",
+      "id": "55261283-6de0-4466-b9d2-85b704d76cc0",
       "name": "Embeddings Google Gemini2",
       "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
       "position": [
-        1888,
-        16
+        5408,
+        2240
       ],
-      "typeVersion": 1,
-      "credentials": {
-        "googlePalmApi": {
-          "id": "dmywV6bNQSsQoY0w",
-          "name": "Google Gemini(PaLM) Api account"
-        }
-      }
+      "typeVersion": 1
     },
     {
       "parameters": {
@@ -518,20 +450,14 @@
         },
         "options": {}
       },
-      "id": "01a7ccea-a090-4510-8e7a-c5ebe7eb642f",
+      "id": "6320ae59-5223-4532-9b41-260ca30e0272",
       "name": "Pinecone Vector Store2",
       "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
       "position": [
-        1888,
-        -176
+        5408,
+        2048
       ],
-      "typeVersion": 1,
-      "credentials": {
-        "pineconeApi": {
-          "id": "HugTgLBXHEiLBDnq",
-          "name": "PineconeApi account"
-        }
-      }
+      "typeVersion": 1
     },
     {
       "parameters": {
@@ -541,27 +467,27 @@
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        1072,
-        -256
+        4592,
+        1968
       ],
       "typeVersion": 1,
-      "id": "73047a9f-17fd-40a7-955a-e772ae4abcf3",
+      "id": "7c0945d4-2b27-46a9-b1d2-47c5ee85f368",
       "name": "Sticky Note2"
     },
     {
       "parameters": {
-        "content": "# Flow C — 守門員 (Watchdog)\n\n## Error Trigger 整合方式\n\nError Trigger 不是用連線觸發的！\nn8n 的運作方式：\n1. 本 workflow 的 Settings → Error Workflow\n   已設為指向自己（self-referencing）\n2. 當 Flow A（索引）或 Flow B（LINE Bot）\n   的任何節點執行失敗時\n3. n8n 自動啟動一個新執行，\n   從 Error Trigger 節點開始跑\n4. 錯誤資訊（workflow name、error message、\n   execution ID）會自動傳入 Error Trigger\n\n⚠️ 若要監控「其他」workflow 的錯誤：\n到那個 workflow → Settings → Error Workflow\n→ 選擇本 workflow\n\n## 三條監控路徑\n1. ⚠️ Error Trigger → Format → Notion Log → LINE\n2. 🔄 每晚 2AM → 查未索引頁面 → LINE\n3. 📊 每週日 10AM → 品質抽查 → LINE\n\n## 使用前設定\n- `YOUR_LOG_DB_ID` → Notion Log DB ID\n- `YOUR_LINE_ADMIN_USER_ID` → LINE User ID\n- `YOUR_LINE_CHANNEL_ACCESS_TOKEN` → LINE Token\n- `YOUR_KB_DB_ID` → Notion 知識庫 DB ID",
-        "height": 1200,
+        "content": "# Flow C — 守門員 (Watchdog)\n\n**三條監控路徑：**\n1. ⚠️ Error Trigger → Notion Log → LINE 通知\n2. 🔄 每晚 2AM → 查未索引頁面 → LINE 通知\n3. 📊 每週日 10AM → 品質抽查 → LINE 報告\n\n**使用前設定：**\n- `YOUR_LOG_DB_ID` → 換成你的 Notion Log DB ID\n- `YOUR_LINE_ADMIN_USER_ID` → 換成你的 LINE User ID\n- `YOUR_LINE_CHANNEL_ACCESS_TOKEN` → 換成你的 LINE Channel Access Token\n- `YOUR_KB_DB_ID` → 換成你的 Notion 知識庫 DB ID",
+        "height": 1456,
         "width": 1200,
         "color": 7
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        1072,
-        1400
+        4592,
+        3488
       ],
       "typeVersion": 1,
-      "id": "92753730-1fba-4a36-ab65-9c0407e4cf2a",
+      "id": "04beab63-3871-4e91-a62c-f960448d6a02",
       "name": "Sticky Note — Flow C"
     },
     {
@@ -569,25 +495,23 @@
       "type": "n8n-nodes-base.errorTrigger",
       "typeVersion": 1,
       "position": [
-        1120,
-        1580
+        4640,
+        3808
       ],
-      "id": "003b92e6-c2af-4987-be9c-5eecae48e146",
+      "id": "2d42cf6f-4659-4128-90ac-dbf9a69b7147",
       "name": "Error Trigger"
     },
     {
       "parameters": {
-        "mode": "runOnceForAllItems",
-        "language": "python",
-        "pythonCode": "from datetime import datetime\n\nitem = _input.all()[0].json\nwf = item.get('workflow', {})\nexec_data = item.get('execution', {})\nerr = exec_data.get('error', {})\n\nreturn [{'json': {\n    'errorType': 'WORKFLOW_ERROR',\n    'workflowName': wf.get('name', 'unknown'),\n    'workflowId': str(wf.get('id', '')),\n    'errorMessage': err.get('message', 'unknown error'),\n    'executionId': str(exec_data.get('id', '')),\n    'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),\n    'severity': 'HIGH',\n    'lineMessage': f\"⚠️ Workflow 錯誤！\\n\"\n                   f\"流程：{wf.get('name', 'unknown')}\\n\"\n                   f\"錯誤：{err.get('message', 'unknown')}\\n\"\n                   f\"時間：{datetime.now().strftime('%m/%d %H:%M')}\"\n}}]"
+        "jsCode": "// 取得第一筆資料的 JSON\nconst j = $input.first().json || {};\nconst wf = j.workflow || {};\nconst exec_data = j.execution || {};\nconst err = exec_data.error || {};\n\n// 處理當前時間\nconst now = new Date();\n// 格式化為 YYYY-MM-DD HH:mm:SS\nconst fullTime = now.getFullYear() + '-' + \n                 String(now.getMonth() + 1).padStart(2, '0') + '-' + \n                 String(now.getDate()).padStart(2, '0') + ' ' + \n                 String(now.getHours()).padStart(2, '0') + ':' + \n                 String(now.getMinutes()).padStart(2, '0') + ':' + \n                 String(now.getSeconds()).padStart(2, '0');\n// 格式化為 MM/DD HH:mm\nconst shortTime = String(now.getMonth() + 1).padStart(2, '0') + '/' + \n                  String(now.getDate()).padStart(2, '0') + ' ' + \n                  String(now.getHours()).padStart(2, '0') + ':' + \n                  String(now.getMinutes()).padStart(2, '0');\n\nconst wfName = wf.name || 'unknown';\nconst errMsg = err.message || 'unknown error';\n\nreturn [{\n    json: {\n        errorType: 'WORKFLOW_ERROR',\n        workflowName: wfName,\n        workflowId: String(wf.id || ''),\n        errorMessage: errMsg,\n        executionId: String(exec_data.id || ''),\n        timestamp: fullTime,\n        severity: 'HIGH',\n        lineMessage: `⚠️ Workflow 錯誤！\\n流程：${wfName}\\n錯誤：${errMsg}\\n時間：${shortTime}`\n    }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1360,
-        1580
+        4880,
+        3808
       ],
-      "id": "dd805c63-2adf-4e02-b1e6-22a8e58a58ca",
+      "id": "823b5235-19c0-483f-9d62-e71abe21e050",
       "name": "Code — Format Error"
     },
     {
@@ -595,32 +519,30 @@
         "resource": "databasePage",
         "databaseId": {
           "__rl": true,
-          "value": "YOUR_LOG_DB_ID",
-          "mode": "id"
+          "value": "32f353f2-9544-809a-a1f4-e65f8b9f7dc7",
+          "mode": "list",
+          "cachedResultName": "n8n",
+          "cachedResultUrl": "https://www.notion.so/32f353f29544809aa1f4e65f8b9f7dc7"
         },
         "propertiesUi": {
           "propertyValues": [
             {
-              "key": "Name|title",
+              "key": "名稱|title",
               "title": "={{ $json.errorType }}: {{ $json.workflowName }}"
             },
             {
-              "key": "ErrorMessage|rich_text",
-              "richText": false,
+              "key": "errorMessage|rich_text",
               "textContent": "={{ $json.errorMessage }}"
             },
             {
-              "key": "Severity|select",
-              "selectValue": "={{ $json.severity }}"
+              "key": "severity|rich_text"
             },
             {
-              "key": "Timestamp|rich_text",
-              "richText": false,
+              "key": "timestamp|rich_text",
               "textContent": "={{ $json.timestamp }}"
             },
             {
-              "key": "ExecutionId|rich_text",
-              "richText": false,
+              "key": "executionId|rich_text",
               "textContent": "={{ $json.executionId }}"
             }
           ]
@@ -630,14 +552,14 @@
       "type": "n8n-nodes-base.notion",
       "typeVersion": 2.2,
       "position": [
-        1600,
-        1580
+        5120,
+        3808
       ],
-      "id": "3f427d54-bbc2-4371-9ff7-48e3877983b2",
+      "id": "cf0d70d3-a1b0-4163-83dc-c1840e6d13e8",
       "name": "Notion — Write Error Log",
       "credentials": {
         "notionApi": {
-          "id": "4Lgcw3P0IFbjArgd",
+          "id": "RRc8GvKNFGIdcjae",
           "name": "Notion account"
         }
       }
@@ -651,7 +573,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=Bearer YOUR_LINE_CHANNEL_ACCESS_TOKEN"
+              "value": "=Bearer sWJQFXBJQyT7LX/hMkAG7zz/+ZivCFaqO4QWjCWPyjVIBLsdGUoQ89wX01AGSnOfLzKZqDcRndhYpKaHndYA9V8tOnH6bB2iUYStWeQ8bT3V8FKF4ATrUJxouYbvNh2TzkZeERjO0rY2jEwxx7TIqgdB04t89/1O/w1cDnyilFU="
             },
             {
               "name": "Content-Type",
@@ -661,15 +583,16 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"to\": \"YOUR_LINE_ADMIN_USER_ID\",\n  \"messages\": [\n    {\n      \"type\": \"text\",\n      \"text\": \"{{ $json.lineMessage }}\"\n    }\n  ]\n}"
+        "jsonBody": "={\n  \"to\": \"U3bc4ff5b50486278d25d00d0c168fa02\",\n  \"messages\": [\n    {\n      \"type\": \"text\",\n      \"text\": \"{{ $json.property_error_message }}\"\n    }\n  ]\n}",
+        "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1840,
-        1580
+        5360,
+        3808
       ],
-      "id": "9a6ff077-a86f-4ad6-bdce-c2f1bb950b44",
+      "id": "06500c88-b3c8-4cd0-bb64-e988a97d0ae8",
       "name": "LINE Push — Error Alert"
     },
     {
@@ -686,10 +609,10 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [
-        1120,
-        1960
+        4640,
+        4192
       ],
-      "id": "abb368b1-8595-4da2-8d49-ecca2f25d799",
+      "id": "544e9572-bed1-4680-9f33-3c2ae41097ff",
       "name": "Schedule — Nightly 2AM"
     },
     {
@@ -698,26 +621,25 @@
         "operation": "getAll",
         "databaseId": {
           "__rl": true,
-          "value": "YOUR_KB_DB_ID",
-          "mode": "id"
+          "value": "32f353f2-9544-809a-a1f4-e65f8b9f7dc7",
+          "mode": "list",
+          "cachedResultName": "n8n",
+          "cachedResultUrl": "https://www.notion.so/32f353f29544809aa1f4e65f8b9f7dc7"
         },
-        "returnAll": false,
-        "limit": 50,
-        "filterType": "string",
-        "filterJson": "={\"or\":[{\"property\":\"Status\",\"select\":{\"equals\":\"NEW\"}},{\"property\":\"Status\",\"select\":{\"equals\":\"\"}}]}",
+        "filterType": "manual",
         "options": {}
       },
       "type": "n8n-nodes-base.notion",
       "typeVersion": 2.2,
       "position": [
-        1360,
-        1960
+        4880,
+        4192
       ],
-      "id": "1e79c0aa-a2ee-454f-9fed-edc32c94589c",
+      "id": "792eff8c-db64-470e-9e60-3d273a08e7d1",
       "name": "Notion — Query Pending Pages",
       "credentials": {
         "notionApi": {
-          "id": "4Lgcw3P0IFbjArgd",
+          "id": "RRc8GvKNFGIdcjae",
           "name": "Notion account"
         }
       }
@@ -749,25 +671,23 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        1600,
-        1960
+        5120,
+        4192
       ],
-      "id": "3b15f120-593f-4e78-bee7-48a92c04b52b",
+      "id": "0013321d-58c9-43a2-a554-1b0c52e2676f",
       "name": "IF — Has Pending?"
     },
     {
       "parameters": {
-        "mode": "runOnceForAllItems",
-        "language": "python",
-        "pythonCode": "from datetime import datetime\n\nitems = _input.all()\ncount = len(items)\ntitles = []\nfor i in items[:5]:\n    props = i.json.get('properties', {})\n    name_prop = props.get('Name', {}).get('title', [{}])\n    title = name_prop[0].get('text', {}).get('content', 'untitled') if name_prop else 'untitled'\n    titles.append(f'  - {title}')\n\nmore = f'\\n  ...還有 {count - 5} 筆' if count > 5 else ''\ntitle_list = '\\n'.join(titles)\n\nmsg = (f'🔄 每晚巡檢報告\\n'\n       f'發現 {count} 筆待索引頁面\\n'\n       f'{title_list}{more}\\n'\n       f'時間：{datetime.now().strftime(\"%m/%d %H:%M\")}')\n\nreturn [{'json': {'pendingCount': count, 'lineMessage': msg}}]"
+        "jsCode": "const items = $input.all();\nconst count = items.length;\nconst titles = [];\n\n// 只取前 5 筆資料\nfor (let i = 0; i < Math.min(5, count); i++) {\n    const j = items[i].json || {};\n    const props = j.properties || {};\n    const name_prop = (props.Name || {}).title || [];\n    \n    let title = 'untitled';\n    if (name_prop.length > 0) {\n        title = (name_prop[0].text || {}).content || 'untitled';\n    }\n    titles.push(`  - ${title}`);\n}\n\nconst more = count > 5 ? `\\n  ...還有 ${count - 5} 筆` : '';\nconst titleList = titles.join('\\n');\n\n// 取得當前時間並格式化為 MM/DD HH:MM\nconst now = new Date();\nconst shortTime = String(now.getMonth() + 1).padStart(2, '0') + '/' + \n                  String(now.getDate()).padStart(2, '0') + ' ' + \n                  String(now.getHours()).padStart(2, '0') + ':' + \n                  String(now.getMinutes()).padStart(2, '0');\n\n// 將 🔄 替換為 [巡檢] 避免編碼錯誤\nconst msg = `[巡檢] 每晚巡檢報告\\n發現 ${count} 筆待索引頁面\\n${titleList}${more}\\n時間：${shortTime}`;\n\nreturn [{ json: { pendingCount: count, lineMessage: msg } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1840,
-        1880
+        5360,
+        4112
       ],
-      "id": "a2043589-7874-43ef-b38b-c5b73fe287ff",
+      "id": "e42133b9-d822-4993-9ed0-82b5017b6209",
       "name": "Code — Reindex Summary"
     },
     {
@@ -779,7 +699,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=Bearer YOUR_LINE_CHANNEL_ACCESS_TOKEN"
+              "value": "=Bearer sWJQFXBJQyT7LX/hMkAG7zz/+ZivCFaqO4QWjCWPyjVIBLsdGUoQ89wX01AGSnOfLzKZqDcRndhYpKaHndYA9V8tOnH6bB2iUYStWeQ8bT3V8FKF4ATrUJxouYbvNh2TzkZeERjO0rY2jEwxx7TIqgdB04t89/1O/w1cDnyilFU="
             },
             {
               "name": "Content-Type",
@@ -789,15 +709,16 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"to\": \"YOUR_LINE_ADMIN_USER_ID\",\n  \"messages\": [\n    {\n      \"type\": \"text\",\n      \"text\": \"{{ $json.lineMessage }}\"\n    }\n  ]\n}"
+        "jsonBody": "={\n  \"to\": \"U3bc4ff5b50486278d25d00d0c168fa02\",\n  \"messages\": [\n    {\n      \"type\": \"text\",\n      \"text\": {{ JSON.stringify($json.lineMessage) }}\n    }\n  ]\n}",
+        "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        2080,
-        1880
+        5600,
+        4112
       ],
-      "id": "4eb346d6-ccad-4af7-9b6e-5c6ca6e5c4bc",
+      "id": "251fce73-7b97-45d1-bcc9-4e91717374e3",
       "name": "LINE Push — Reindex Alert"
     },
     {
@@ -814,87 +735,36 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [
-        1120,
-        2340
+        4640,
+        4576
       ],
-      "id": "9f86dd2f-02b4-445f-9fb2-00cdc510bcb3",
+      "id": "6a8ad5b2-e6f3-4b51-a598-87dab1fc27c7",
       "name": "Schedule — Weekly Sun 10AM"
     },
     {
       "parameters": {
-        "mode": "runOnceForAllItems",
-        "language": "python",
-        "pythonCode": "# Prepare test queries for quality check\n# Customize these to match your knowledge base content\ntest_queries = [\n    '公司的主要產品有哪些？',\n    '退貨政策是什麼？',\n    '如何聯絡客服？'\n]\n\nimport random\nquery = random.choice(test_queries)\n\nreturn [{'json': {'testQuery': query}}]"
+        "jsCode": "// 準備用來做品質檢查的測試問題\nconst testQueries = [\n    '公司的主要產品有哪些？',\n    '退貨政策是什麼？',\n    '如何聯絡客服？',\n    '電子鎖沒電了怎麼辦？',\n    '如何設定指紋解鎖？',\n    '安裝門鎖需要另外收費嗎？'\n];\n\n// 使用 JavaScript 內建的數學函式來隨機抽取一個問題\nconst randomIndex = Math.floor(Math.random() * testQueries.length);\nconst query = testQueries[randomIndex];\n\nreturn [{\n    json: {\n        testQuery: query\n    }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1360,
-        2340
+        4880,
+        4576
       ],
-      "id": "c3ec2b8f-dc93-4ac8-9329-3e0e15e971be",
+      "id": "fb102732-7cfa-49aa-844a-fe6ced392ae6",
       "name": "Code — Prepare Test Query"
     },
     {
       "parameters": {
-        "mode": "retrieve",
-        "pineconeIndex": {
-          "__rl": true,
-          "value": "n8n",
-          "mode": "list",
-          "cachedResultName": "n8n"
-        },
-        "prompt": "={{ $json.testQuery }}",
-        "topK": 3,
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
-      "typeVersion": 1.3,
-      "position": [
-        1600,
-        2340
-      ],
-      "id": "d90da46f-62fe-4af6-9655-f3e2a8358f17",
-      "name": "Pinecone — Quality Test",
-      "credentials": {
-        "pineconeApi": {
-          "id": "HugTgLBXHEiLBDnq",
-          "name": "PineconeApi account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "modelName": "models/gemini-embedding-001"
-      },
-      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
-      "typeVersion": 1,
-      "position": [
-        1600,
-        2560
-      ],
-      "id": "91b2a573-f885-410c-a183-bf9260e89fc7",
-      "name": "Embeddings Google Gemini — Quality",
-      "credentials": {
-        "googlePalmApi": {
-          "id": "dmywV6bNQSsQoY0w",
-          "name": "Google Gemini(PaLM) Api account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "mode": "runOnceForAllItems",
-        "language": "python",
-        "pythonCode": "from datetime import datetime\n\nitems = _input.all()\nresults = []\nfor item in items:\n    doc = item.json\n    results.append({\n        'content_preview': str(doc.get('document', {}).get('pageContent', ''))[:100],\n        'metadata': doc.get('document', {}).get('metadata', {})\n    })\n\nhas_results = len(results) > 0\nquery = items[0].json.get('testQuery', 'N/A') if items else 'N/A'\n\nif has_results:\n    previews = '\\n'.join([f\"  {i+1}. {r['content_preview']}...\" for i, r in enumerate(results[:3])])\n    msg = (f'📊 每週品質報告\\n'\n           f'測試問句：{query}\\n'\n           f'檢索結果：{len(results)} 筆\\n'\n           f'{previews}\\n'\n           f'狀態：✅ 正常\\n'\n           f'時間：{datetime.now().strftime(\"%m/%d %H:%M\")}')\n    quality = 'OK'\nelse:\n    msg = (f'📊 每週品質報告\\n'\n           f'測試問句：{query}\\n'\n           f'⚠️ 檢索結果為空！請檢查 Pinecone 索引\\n'\n           f'時間：{datetime.now().strftime(\"%m/%d %H:%M\")}')\n    quality = 'FAIL'\n\nreturn [{'json': {'quality': quality, 'resultCount': len(results), 'lineMessage': msg}}]"
+        "jsCode": "const items = $input.all();\nconst results = [];\n\n// 1. 處理所有檢索回來的資料\nfor (const item of items) {\n    const doc = item.json || {};\n    const documentObj = doc.document || {};\n    // 擷取前 100 個字元作為預覽\n    const contentPreview = (documentObj.pageContent || '').substring(0, 100);\n    const metadata = documentObj.metadata || {};\n    \n    results.push({\n        content_preview: contentPreview,\n        metadata: metadata\n    });\n}\n\nconst hasResults = results.length > 0;\n// 取得上一層傳過來的測試問句\nconst query = items.length > 0 ? (items[0].json.testQuery || 'N/A') : 'N/A';\n\n// 2. 格式化當前時間 (MM/DD HH:MM)\nconst now = new Date();\nconst timeStr = String(now.getMonth() + 1).padStart(2, '0') + '/' + \n                String(now.getDate()).padStart(2, '0') + ' ' + \n                String(now.getHours()).padStart(2, '0') + ':' + \n                String(now.getMinutes()).padStart(2, '0');\n\nlet msg = '';\nlet quality = '';\n\n// 3. 組合報告內容 (JS 可以完美支援 Emoji)\nif (hasResults) {\n    const previews = results.slice(0, 3).map((r, i) => `  ${i + 1}. ${r.content_preview}...`).join('\\n');\n    msg = `📊 每週品質報告\\n測試問句：${query}\\n檢索結果：${results.length} 筆\\n${previews}\\n狀態：✅ 正常\\n時間：${timeStr}`;\n    quality = 'OK';\n} else {\n    msg = `📊 每週品質報告\\n測試問句：${query}\\n⚠️ 檢索結果為空！請檢查 Pinecone 索引\\n時間：${timeStr}`;\n    quality = 'FAIL';\n}\n\nreturn [{\n    json: {\n        quality: quality,\n        resultCount: results.length,\n        lineMessage: msg\n    }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1840,
-        2340
+        5360,
+        4576
       ],
-      "id": "aa0d5210-faf0-4223-8b29-8a6273fdd752",
+      "id": "f906ecad-5613-4624-92d2-1df44afab4bc",
       "name": "Code — Evaluate Quality"
     },
     {
@@ -906,7 +776,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=Bearer YOUR_LINE_CHANNEL_ACCESS_TOKEN"
+              "value": "=Bearer sWJQFXBJQyT7LX/hMkAG7zz/+ZivCFaqO4QWjCWPyjVIBLsdGUoQ89wX01AGSnOfLzKZqDcRndhYpKaHndYA9V8tOnH6bB2iUYStWeQ8bT3V8FKF4ATrUJxouYbvNh2TzkZeERjO0rY2jEwxx7TIqgdB04t89/1O/w1cDnyilFU="
             },
             {
               "name": "Content-Type",
@@ -916,19 +786,19 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"to\": \"YOUR_LINE_ADMIN_USER_ID\",\n  \"messages\": [\n    {\n      \"type\": \"text\",\n      \"text\": \"{{ $json.lineMessage }}\"\n    }\n  ]\n}"
+        "jsonBody": "={\n  \"to\": \"U3bc4ff5b50486278d25d00d0c168fa02\",\n  \"messages\": [\n    {\n      \"type\": \"text\",\n      \"text\": {{ JSON.stringify($json.lineMessage) }}\n    }\n  ]\n}",
+        "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        2080,
-        2340
+        5600,
+        4576
       ],
-      "id": "fce8d10c-115a-4567-80ff-15f895694695",
+      "id": "3bcb234e-f0f6-4286-b06a-7fc46178b6c9",
       "name": "LINE Push — Quality Report"
     }
   ],
-  "pinData": {},
   "connections": {
     "When clicking ‘Execute workflow’": {
       "main": [
@@ -1214,8 +1084,7 @@
             "type": "main",
             "index": 0
           }
-        ],
-        []
+        ]
       ]
     },
     "Code — Reindex Summary": {
@@ -1240,28 +1109,6 @@
         ]
       ]
     },
-    "Code — Prepare Test Query": {
-      "main": [
-        [
-          {
-            "node": "Pinecone — Quality Test",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Pinecone — Quality Test": {
-      "main": [
-        [
-          {
-            "node": "Code — Evaluate Quality",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Code — Evaluate Quality": {
       "main": [
         [
@@ -1272,31 +1119,21 @@
           }
         ]
       ]
-    },
-    "Embeddings Google Gemini — Quality": {
-      "ai_embedding": [
-        [
-          {
-            "node": "Pinecone — Quality Test",
-            "type": "ai_embedding",
-            "index": 0
-          }
-        ]
-      ]
     }
   },
-  "active": true,
   "settings": {
     "executionOrder": "v1",
-    "binaryMode": "separate",
-    "availableInMCP": false,
-    "errorWorkflow": "PDKBA4NJqzwKoRXh"
+    "binaryMode": "separate"
   },
-  "versionId": "fd51e991-6c03-49fb-b042-84ac92b91dbc",
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "4b0996d73576c99ebb925815cb8955d2044410839318fe3d4d34ad97ad3d941c"
+    "instanceId": "5c382041e9e21f3536f4e542bc076d9d20bdb81ee8b1cce212b601f3a071f8be"
   },
-  "id": "PDKBA4NJqzwKoRXh",
-  "tags": []
+  "activeVersionId": null,
+  "versionCounter": 1,
+  "triggerCount": 0,
+  "versionMetadata": {
+    "name": null,
+    "description": null
+  }
 }

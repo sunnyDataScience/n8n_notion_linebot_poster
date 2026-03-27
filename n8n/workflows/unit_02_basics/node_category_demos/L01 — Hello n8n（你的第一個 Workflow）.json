@@ -1,0 +1,131 @@
+{
+  "id": "workshop_L01",
+  "name": "L01 — Hello n8n（你的第一個 Workflow）",
+  "description": null,
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "97cb7b95-473b-4739-a160-d47450c517be",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        288,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "greeting",
+              "value": "=Hello n8n! 我拿到了 {{ $json.customer }} 的商機資料！",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "dealValue",
+              "value": "={{ $json.amount }}",
+              "type": "number"
+            },
+            {
+              "id": "3",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "4ea3c6cb-b3cc-4595-957a-249a70fdcaaf",
+      "name": "Edit Fields — 加上問候語",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        560,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## L01：Hello n8n\n### 你的第一個 Workflow\n\n**學習目標：**\n1. 認識 n8n 的介面\n2. 了解「節點」和「連線」\n3. 按下 Execute 看結果\n\n**操作步驟：**\n1. 按右上角「Test Workflow」按鈕\n2. 點擊 Edit Fields 節點\n3. 看右邊面板的「輸出」\n\n**核心觀念：**\n- 每個 Workflow 都從 Trigger 開始\n- 資料像水一樣從左流到右\n- 每個節點都會產出資料給下一個節點\n- pinData = 預設的假資料（不用真的串 API）",
+        "height": 480,
+        "width": 500,
+        "color": 4
+      },
+      "id": "b52a5b39-b660-4358-93d5-a3ae6fe9104f",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -304,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### 1. Manual Trigger\n按一下就啟動\n\n這裡用 pinData 預設\n一筆銷售資料\n\n→ 點開看 Output\n→ 這就是 JSON！",
+        "height": 200,
+        "width": 220,
+        "color": 6
+      },
+      "id": "26b576e3-c1d7-4aa0-8f2a-4da053f891e7",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        224,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### 2. Edit Fields\n用 Expression 加工資料\n\n`{{ $json.customer }}`\n= 取上一個節點的值\n\n→ 試試改 greeting\n→ 重新執行看結果",
+        "height": 200,
+        "width": 220,
+        "color": 3
+      },
+      "id": "08158915-9e10-4f2d-b796-4662245f129a",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        496,
+        48
+      ]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields — 加上問候語",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "meta": {
+    "instanceId": "5c382041e9e21f3536f4e542bc076d9d20bdb81ee8b1cce212b601f3a071f8be"
+  },
+  "activeVersionId": null,
+  "versionCounter": 1,
+  "triggerCount": 0,
+  "versionMetadata": {
+    "name": null,
+    "description": null
+  }
+}

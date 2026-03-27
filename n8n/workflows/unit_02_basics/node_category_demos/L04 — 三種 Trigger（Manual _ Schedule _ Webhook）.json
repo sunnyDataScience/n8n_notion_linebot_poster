@@ -1,0 +1,197 @@
+{
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "23fbfb16-83bd-48c4-a696-8ee0bfa7e8d2",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        160,
+        752
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours"
+            }
+          ]
+        }
+      },
+      "id": "8f1c56d2-1883-4c7a-81d5-7d3cc98dc870",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        160,
+        992
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "new-deal",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "363b0ecd-747b-4b7a-a5c3-15215458e2aa",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        160,
+        1232
+      ],
+      "webhookId": "cb966ad7-a146-402f-935e-2116a24f4f44"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "dealId",
+              "value": "=DEAL-{{ $now.toFormat(\"yyyyMMddHHmmss\") }}",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "salesRep",
+              "value": "={{ $json.body ? $json.body.salesRep : ($json.salesRep ?? \"林志明\") }}",
+              "type": "string"
+            },
+            {
+              "id": "3",
+              "name": "customer",
+              "value": "={{ $json.body ? $json.body.customer : ($json.customer ?? \"鴻海精密工業\") }}",
+              "type": "string"
+            },
+            {
+              "id": "4",
+              "name": "amount",
+              "value": "={{ $json.body ? $json.body.amount : ($json.amount ?? 640000) }}",
+              "type": "number"
+            },
+            {
+              "id": "5",
+              "name": "stage",
+              "value": "提案中",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f3fa3b91-6a12-4260-a0a3-0f7b32fab610",
+      "name": "Format Deal Record",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        672,
+        992
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## L04：三種 Trigger\n### 「誰」來啟動你的 Workflow？\n\n**學習目標：**\n1. 認識三種觸發方式的差異\n2. 理解 Fan-in 模式（多入口 → 一個處理）\n3. 體驗 Webhook 的「被動等通知」概念\n\n**三種觸發方式：**\n- **Manual** → 手動按鈕（開發測試）\n- **Schedule** → 定時執行（排程報表）\n- **Webhook** → 外部 POST 進來（CRM / LINE Bot）\n\n**Respond to Webhook 怎麼取上游資料？**\n- `allIncomingItems` → 直接回傳上游整個 JSON（最簡單）\n- `json` + 自訂 Body → 用 `{{ $json.dealId }}` 取特定欄位\n- `$json` = 上一個節點（Format Deal Record）的輸出\n\n\n**動手試試：**\n複製 Webhook URL → 用瀏覽器或 Postman 打看看",
+        "height": 520,
+        "width": 520,
+        "color": 4
+      },
+      "id": "3c8a709d-6789-45de-b52f-e019241c5478",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -416,
+        752
+      ]
+    },
+    {
+      "parameters": {
+        "content": "curl -k -X POST https://localhost:8443/webhook-test/new-deal",
+        "height": 80,
+        "width": 464
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -32,
+        1376
+      ],
+      "typeVersion": 1,
+      "id": "569f45fa-3676-4fdc-990f-fcb9e7847e19",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "numberOfRecords": 40
+      },
+      "type": "n8n-nodes-fake-sales.fakeSales",
+      "typeVersion": 1,
+      "position": [
+        480,
+        992
+      ],
+      "id": "2cf2696f-5ec9-432f-8304-e3af2090d56f",
+      "name": "Fake Sales"
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fake Sales",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fake Sales",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fake Sales",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Deal Record": {
+      "main": [
+        []
+      ]
+    },
+    "Fake Sales": {
+      "main": [
+        [
+          {
+            "node": "Format Deal Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "9c10b22a58a4f5a4bf4bd3896160475e71228854bcdea2e0475e1358324e7bd5"
+  }
+}

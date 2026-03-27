@@ -1,15 +1,23 @@
 {
+  "id": "workshop_L10",
   "name": "L10 — AI Agent（AI 銷售顧問）",
+  "description": null,
+  "active": false,
+  "isArchived": false,
   "nodes": [
     {
       "parameters": {
         "options": {}
       },
-      "id": "aaaaaaaa-0001-0001-0001-000000000001",
+      "id": "4848dff6-cec0-4988-86fa-5bb9feba5af5",
       "name": "When chat message received",
       "type": "@n8n/n8n-nodes-langchain.chatTrigger",
       "typeVersion": 1.1,
-      "position": [200, 400]
+      "position": [
+        -448,
+        16
+      ],
+      "webhookId": "839d27c0-f1c9-4cdf-ab47-44866da19e83"
     },
     {
       "parameters": {
@@ -17,11 +25,107 @@
           "systemMessage": "你是一位資深的 B2B 業務銷售顧問 AI 助理。\n\n【產品線與報價】\n雲端服務：\n- 企業雲端方案 Pro $128,000/套（導入約 2 週）\n- 私有雲基礎建設 $2,800,000/套（導入約 3 個月）\n- ERP 雲端升級方案 $280,000/套（導入約 1 個月）\n- 雲端備份解決方案 $95,000/套（導入約 1 週）\n\nAI 解決方案：\n- AI 風控分析平台 $980,000（導入約 2 個月）\n- AI 客服機器人 $560,000（導入約 1 個月）\n- 大數據分析平台 $750,000（導入約 2 個月）\n- 推薦引擎系統 $480,000（導入約 1 個月）\n\nIoT 方案：\n- 智慧工廠監控系統 $350,000/套（導入約 1 個月）\n- 供應鏈管理系統 $420,000/套（導入約 6 週）\n- 能源管理系統 $860,000/套（導入約 2 個月）\n\n資安方案：\n- 資安防護旗艦方案 $1,500,000（導入約 3 個月）\n\n【規則】\n1. 根據客戶的產業和需求推薦 1-3 項產品\n2. 一定要附上建議報價和預估導入時間\n3. 主動詢問客戶的預算範圍和痛點\n4. 如果客戶問非銷售問題，禮貌引導回產品諮詢\n5. 用客戶使用的語言回覆\n6. 提供競品比較優勢"
         }
       },
-      "id": "aaaaaaaa-0001-0001-0001-000000000002",
+      "id": "117739b6-3f9b-4e70-8577-b8aed3a76d90",
       "name": "AI Sales Advisor",
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.8,
-      "position": [500, 400]
+      "position": [
+        -144,
+        16
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "4f745157-7fd7-4961-81f1-46348e578a45",
+      "name": "Simple Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -64,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## L10：AI Agent\n### AI 銷售顧問 — 用 LLM 處理自然語言\n\n**學習目標：**\n1. Chat Trigger → AI Agent → LLM 的架構\n2. System Prompt 的設計方式\n3. Sub-node 概念（LLM + Memory 掛在 Agent 下方）\n4. 對話記憶（Memory）讓 AI 記住上下文\n\n**架構：**\n```\nChat Trigger（使用者輸入）\n    ↓\nAI Agent（推理引擎）\n    ↑         ↑\n  OpenAI    Memory\n （大腦）  （記憶）\n```\n\n**需要：** OpenAI API Key（在 Credential 設定）\n\n**試試這些問法：**\n- 「客戶是金融業，預算 100 萬以內」\n- 「製造業想做工廠數位轉型」\n- 「有沒有適合中小企業的方案？」\n- 「客戶擔心資安合規問題」\n- 「剛才推薦的方案可以再便宜嗎？」（測記憶）\n\n**對應教材：** 06_API基礎概念.md 第 4-5 章",
+        "height": 620,
+        "width": 500,
+        "color": 4
+      },
+      "id": "e2b24ae3-b271-4799-8689-4e90149b4d7b",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1056,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### Chat Trigger\nn8n 內建的聊天介面\n\n按「Chat」按鈕開啟\n直接在 n8n 裡對話\n不需要外部工具\n\n→ 對比 Manual Trigger：\n這個是「對話」觸發\n不是「按鈕」觸發",
+        "height": 260,
+        "width": 220,
+        "color": 6
+      },
+      "id": "e8f2f8b1-dc1e-489f-85ec-8f7e4d5fbff2",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -496,
+        -288
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### AI Agent\n核心推理引擎\n\nSystem Prompt 定義：\n- 產品線與報價\n- 回答規則\n- 語言偏好\n\n下方掛兩個 Sub-node：\n- OpenAI = 大腦\n- Memory = 記憶\n\n→ Agent 負責「思考」\n→ LLM 負責「語言能力」\n→ Memory 負責「記住對話」",
+        "height": 340,
+        "color": 3
+      },
+      "id": "d8209892-bc88-4fa8-979b-57a9b38ce5fc",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -144,
+        -352
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### Sub-nodes（掛在 Agent 下方）\n\n**OpenAI Chat Model**\n- model: gpt-4o-mini\n- 需要 OpenAI Credential\n- 負責語言生成\n\n**Simple Memory**\n- 記住對話上下文\n- 讓 AI 知道「剛才聊了什麼」\n- 沒有 Memory = 每次都失憶\n\n→ 試試問第二個問題\n→ 看 AI 有沒有記住第一個",
+        "height": 320,
+        "width": 260,
+        "color": 5
+      },
+      "id": "e9b553af-0bf3-4e1d-a1c8-d50d5ddbf1b8",
+      "name": "Sticky Note3",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -224,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -176,
+        240
+      ],
+      "id": "911f3186-8e9d-4724-974a-f3e19ece3c4e",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "UeaIvaxI8kOXkGiR",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
     },
     {
       "parameters": {
@@ -32,63 +136,14 @@
         },
         "options": {}
       },
-      "id": "aaaaaaaa-0001-0001-0001-000000000003",
+      "id": "ed93158d-f213-46e2-b704-5d8fa582a928",
       "name": "OpenAI Chat Model",
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
-      "position": [440, 620]
-    },
-    {
-      "parameters": {},
-      "id": "aaaaaaaa-0001-0001-0001-000000000004",
-      "name": "Simple Memory",
-      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
-      "typeVersion": 1.3,
-      "position": [580, 620]
-    },
-    {
-      "parameters": {
-        "content": "## L10：AI Agent\n### AI 銷售顧問 — 用 LLM 處理自然語言\n\n**學習目標：**\n1. Chat Trigger → AI Agent → LLM 的架構\n2. System Prompt 的設計方式\n3. Sub-node 概念（LLM + Memory 掛在 Agent 下方）\n4. 對話記憶（Memory）讓 AI 記住上下文\n\n**架構：**\n```\nChat Trigger（使用者輸入）\n    ↓\nAI Agent（推理引擎）\n    ↑         ↑\n  OpenAI    Memory\n （大腦）  （記憶）\n```\n\n**需要：** OpenAI API Key（在 Credential 設定）\n\n**試試這些問法：**\n- 「客戶是金融業，預算 100 萬以內」\n- 「製造業想做工廠數位轉型」\n- 「有沒有適合中小企業的方案？」\n- 「客戶擔心資安合規問題」\n- 「剛才推薦的方案可以再便宜嗎？」（測記憶）\n\n**對應教材：** 06_API基礎概念.md 第 4-5 章",
-        "height": 620, "width": 500, "color": 4
-      },
-      "id": "aaaaaaaa-0001-0001-0001-000000000010",
-      "name": "Sticky Note",
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [80, -220]
-    },
-    {
-      "parameters": {
-        "content": "### Chat Trigger\nn8n 內建的聊天介面\n\n按「Chat」按鈕開啟\n直接在 n8n 裡對話\n不需要外部工具\n\n→ 對比 Manual Trigger：\n這個是「對話」觸發\n不是「按鈕」觸發",
-        "height": 260, "width": 220, "color": 6
-      },
-      "id": "aaaaaaaa-0001-0001-0001-000000000011",
-      "name": "Sticky Note1",
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [100, 300]
-    },
-    {
-      "parameters": {
-        "content": "### AI Agent\n核心推理引擎\n\nSystem Prompt 定義：\n- 產品線與報價\n- 回答規則\n- 語言偏好\n\n下方掛兩個 Sub-node：\n- OpenAI = 大腦\n- Memory = 記憶\n\n→ Agent 負責「思考」\n→ LLM 負責「語言能力」\n→ Memory 負責「記住對話」",
-        "height": 340, "width": 240, "color": 3
-      },
-      "id": "aaaaaaaa-0001-0001-0001-000000000012",
-      "name": "Sticky Note2",
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [400, 60]
-    },
-    {
-      "parameters": {
-        "content": "### Sub-nodes（掛在 Agent 下方）\n\n**OpenAI Chat Model**\n- model: gpt-4o-mini\n- 需要 OpenAI Credential\n- 負責語言生成\n\n**Simple Memory**\n- 記住對話上下文\n- 讓 AI 知道「剛才聊了什麼」\n- 沒有 Memory = 每次都失憶\n\n→ 試試問第二個問題\n→ 看 AI 有沒有記住第一個",
-        "height": 320, "width": 260, "color": 5
-      },
-      "id": "aaaaaaaa-0001-0001-0001-000000000013",
-      "name": "Sticky Note3",
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [360, 760]
+      "position": [
+        -336,
+        240
+      ]
     }
   ],
   "connections": {
@@ -98,17 +153,6 @@
           {
             "node": "AI Sales Advisor",
             "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "OpenAI Chat Model": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "AI Sales Advisor",
-            "type": "ai_languageModel",
             "index": 0
           }
         ]
@@ -124,11 +168,37 @@
           }
         ]
       ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        []
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Sales Advisor",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
-  "pinData": {},
-  "active": false,
-  "settings": {"executionOrder": "v1"},
-  "meta": {"templateCredsSetupCompleted": true},
-  "tags": []
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5c382041e9e21f3536f4e542bc076d9d20bdb81ee8b1cce212b601f3a071f8be"
+  },
+  "activeVersionId": null,
+  "versionCounter": 1,
+  "triggerCount": 0,
+  "versionMetadata": {
+    "name": null,
+    "description": null
+  }
 }

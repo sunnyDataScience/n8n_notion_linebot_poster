@@ -1,4 +1,5 @@
 {
+  "id": "fix_n8n_example",
   "name": "n8n_example",
   "nodes": [
     {
@@ -135,7 +136,7 @@
         "promptType": "define",
         "text": "={{ $json.message.text }}",
         "options": {
-          "systemMessage": "使用繁體中文回答"
+          "systemMessage": "你是一個知識庫問答助手，負責根據檢索到的文件內容回答使用者問題。\n\n## 核心規則\n1. **僅根據檢索到的文件內容回答**，不要憑空編造。\n2. **必須標注資料來源**：每段回答後附上參考出處。\n3. 使用**繁體中文**回答。\n4. 如果檢索結果中找不到相關資訊，誠實回答「目前知識庫中沒有相關資料」，不要猜測。\n\n## 回答格式\n請依照以下格式回覆：\n\n**回答：**\n[根據檢索內容整理的回答]\n\n**參考來源：**\n- 📄 [文件標題或頁面名稱]（來源：Google Drive / Notion）\n- 📄 [文件標題或頁面名稱]（來源：Google Drive / Notion）\n\n## 注意事項\n- 當多份文件提及同一主題時，整合各來源資訊並分別標注。\n- 若使用者問題模糊，先簡要回答，再追問是否需要更詳細的資訊。\n- 引用時盡量提供文件的具體段落或重點，幫助使用者快速定位原文。"
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
@@ -163,7 +164,7 @@
     {
       "parameters": {
         "mode": "retrieve-as-tool",
-        "toolDescription": "Provide some Info.",
+        "toolDescription": "Search the knowledge base for relevant documents. This tool contains indexed content from Google Drive files and Notion pages. Use this tool whenever the user asks a question that may be answered by the stored documents. The retrieved results include document content and metadata such as page titles, source type, and creation dates. Always use this tool before answering knowledge-related questions.",
         "pineconeIndex": {
           "__rl": true,
           "value": "n8n",
@@ -472,7 +473,7 @@
     },
     {
       "parameters": {
-        "content": "# Flow C — 守門員 (Watchdog)\n\n**三條監控路徑：**\n1. ⚠️ Error Trigger → Notion Log → LINE 通知\n2. 🔄 每晚 2AM → 查未索引頁面 → LINE 通知\n3. 📊 每週日 10AM → 品質抽查 → LINE 報告\n\n**使用前設定：**\n- `YOUR_LOG_DB_ID` → 換成你的 Notion Log DB ID\n- `YOUR_LINE_ADMIN_USER_ID` → 換成你的 LINE User ID\n- `YOUR_LINE_CHANNEL_ACCESS_TOKEN` → 換成你的 LINE Channel Access Token\n- `YOUR_KB_DB_ID` → 換成你的 Notion 知識庫 DB ID",
+        "content": "# Flow C — 守門員 (Watchdog)\n\n## Error Trigger 整合方式\n\nError Trigger 不是用連線觸發的！\nn8n 的運作方式：\n1. 本 workflow 的 Settings → Error Workflow\n   已設為指向自己（self-referencing）\n2. 當 Flow A（索引）或 Flow B（LINE Bot）\n   的任何節點執行失敗時\n3. n8n 自動啟動一個新執行，\n   從 Error Trigger 節點開始跑\n4. 錯誤資訊（workflow name、error message、\n   execution ID）會自動傳入 Error Trigger\n\n⚠️ 若要監控「其他」workflow 的錯誤：\n到那個 workflow → Settings → Error Workflow\n→ 選擇本 workflow\n\n## 三條監控路徑\n1. ⚠️ Error Trigger → Format → Notion Log → LINE\n2. 🔄 每晚 2AM → 查未索引頁面 → LINE\n3. 📊 每週日 10AM → 品質抽查 → LINE\n\n## 使用前設定\n- `YOUR_LOG_DB_ID` → Notion Log DB ID\n- `YOUR_LINE_ADMIN_USER_ID` → LINE User ID\n- `YOUR_LINE_CHANNEL_ACCESS_TOKEN` → LINE Token\n- `YOUR_KB_DB_ID` → Notion 知識庫 DB ID",
         "height": 1456,
         "width": 1200,
         "color": 7
@@ -1121,7 +1122,8 @@
   "active": false,
   "settings": {
     "executionOrder": "v1",
-    "binaryMode": "separate"
+    "binaryMode": "separate",
+    "errorWorkflow": "fix_n8n_example"
   },
   "versionId": "b88bca2e-7eaa-40a0-b6bb-2407bb899918",
   "meta": {
