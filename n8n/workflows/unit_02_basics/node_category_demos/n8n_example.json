@@ -1123,7 +1123,8 @@
   },
   "settings": {
     "executionOrder": "v1",
-    "binaryMode": "separate"
+    "binaryMode": "separate",
+    "errorWorkflow": "workshop_n8n_example"
   },
   "meta": {
     "templateCredsSetupCompleted": true,

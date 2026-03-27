@@ -1123,7 +1123,7 @@
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate",
-    "errorWorkflow": "fix_n8n_example"
+    "errorWorkflow": "SELF"
   },
   "versionId": "b88bca2e-7eaa-40a0-b6bb-2407bb899918",
   "meta": {
