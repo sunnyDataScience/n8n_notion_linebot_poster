@@ -1,0 +1,1301 @@
+{
+  "name": "n8n_example",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -16,
+        -160
+      ],
+      "id": "dc23a57b-cdd0-4d2c-b7f7-7420afb1a486",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "returnAll": true,
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "value": "1yp7hMWrb9Dk3yKjkcz95Jfswc0ao7uZk",
+            "mode": "list",
+            "cachedResultName": "n8n",
+            "cachedResultUrl": "https://drive.google.com/drive/folders/1yp7hMWrb9Dk3yKjkcz95Jfswc0ao7uZk"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        192,
+        -160
+      ],
+      "id": "bcdb1dc4-1eaa-48d0-9f77-28d60c26a808",
+      "name": "Search files and folders",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "cdvwZOttwh96xFdW",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        368,
+        -160
+      ],
+      "id": "a1e14fe3-37b0-4ebd-8d31-e51512852554",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "cdvwZOttwh96xFdW",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        544,
+        -160
+      ],
+      "id": "d1c23030-24aa-42d3-84e3-359ffd335f26",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "n8n",
+          "mode": "list",
+          "cachedResultName": "n8n"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        768,
+        -160
+      ],
+      "id": "d40a19cb-9c09-4a11-9b2f-2626d7a822f2",
+      "name": "Pinecone Vector Store",
+      "credentials": {
+        "pineconeApi": {
+          "id": "HugTgLBXHEiLBDnq",
+          "name": "PineconeApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "dataType": "binary",
+        "textSplittingMode": "custom",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        736,
+        224
+      ],
+      "id": "d16e78d3-481e-41e9-8a07-71be703cbe63",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "chunkOverlap": 50,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        736,
+        384
+      ],
+      "id": "ccadba75-0380-45af-9109-dc4d6648d35a",
+      "name": "Recursive Character Text Splitter"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-embedding-001"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        768,
+        64
+      ],
+      "id": "d9099ebe-9997-47dc-8c12-4e15e32e2a46",
+      "name": "Embeddings Google Gemini",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "dmywV6bNQSsQoY0w",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.message.text }}",
+        "options": {
+          "systemMessage": "使用繁體中文回答"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        176,
+        624
+      ],
+      "id": "ef148f1c-cf30-4add-be87-fcfe4003267d",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        176,
+        832
+      ],
+      "id": "50af66e5-8fd6-49fc-af10-c3c137720586",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "dmywV6bNQSsQoY0w",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Provide some Info.",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "n8n",
+          "mode": "list",
+          "cachedResultName": "n8n"
+        },
+        "topK": 2,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        240,
+        976
+      ],
+      "id": "d1fb57c0-e0a9-4ec5-a2bb-b3c9a8f6655b",
+      "name": "Pinecone Vector Store1",
+      "credentials": {
+        "pineconeApi": {
+          "id": "HugTgLBXHEiLBDnq",
+          "name": "PineconeApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-embedding-001"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        240,
+        1168
+      ],
+      "id": "8577536f-2994-4409-9ef2-52dfdfbcdcc7",
+      "name": "Embeddings Google Gemini1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "dmywV6bNQSsQoY0w",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# Chat",
+        "height": 768,
+        "width": 784,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -64,
+        544
+      ],
+      "typeVersion": 1,
+      "id": "9e6a7568-aba9-449f-a661-35a64134d5dd",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "# Google",
+        "height": 784,
+        "width": 1120
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -64,
+        -256
+      ],
+      "typeVersion": 1,
+      "id": "c0146776-505c-4e3e-8b13-4c4bd541e64a",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "events": [
+          "message"
+        ]
+      },
+      "type": "@aotoki/n8n-nodes-line-messaging.lineMessagingTrigger",
+      "typeVersion": 1,
+      "position": [
+        -16,
+        624
+      ],
+      "id": "f639b79a-9489-4b5e-b389-5aef4e6871ca",
+      "name": "Line Messaging Trigger",
+      "webhookId": "f8ea82b4-abd6-46d6-8de9-4267f1b07679",
+      "credentials": {
+        "lineMessagingApi": {
+          "id": "ssJ8HCX74TuSmoot",
+          "name": "Line Messaging account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "replyToken": "={{ $('Line Messaging Trigger').item.json.replyToken }}",
+        "messages": {
+          "values": [
+            {
+              "text": "={{ $json.output }}"
+            }
+          ]
+        }
+      },
+      "type": "@aotoki/n8n-nodes-line-messaging.lineMessaging",
+      "typeVersion": 1,
+      "position": [
+        496,
+        624
+      ],
+      "id": "a2acd469-8e09-4872-a192-2eb6624fd1c3",
+      "name": "Line Messaging",
+      "credentials": {
+        "lineMessagingApi": {
+          "id": "ssJ8HCX74TuSmoot",
+          "name": "Line Messaging account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chunkSize": 256,
+        "chunkOverlap": 30
+      },
+      "id": "5f30cd17-e9b7-4a9d-a20d-75832309f9f2",
+      "name": "Token Splitter",
+      "type": "@n8n/n8n-nodes-langchain.textSplitterTokenSplitter",
+      "position": [
+        1856,
+        352
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "databaseId": {
+          "__rl": true,
+          "value": "315353f2-9544-8063-b64f-f45a370545df",
+          "mode": "list",
+          "cachedResultName": "n8n",
+          "cachedResultUrl": "https://www.notion.so/315353f295448063b64ff45a370545df"
+        },
+        "simple": false
+      },
+      "id": "a58c9828-656e-47be-85ea-d8aa8cf2af80",
+      "name": "Notion - Page Added Trigger",
+      "type": "n8n-nodes-base.notionTrigger",
+      "position": [
+        1120,
+        -176
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "notionApi": {
+          "id": "4Lgcw3P0IFbjArgd",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "block",
+        "operation": "getAll",
+        "blockId": {
+          "__rl": true,
+          "mode": "url",
+          "value": "={{ $json.url }}"
+        },
+        "returnAll": true
+      },
+      "id": "fd2c6f05-0210-4944-872a-7c38c0182b5f",
+      "name": "Notion - Retrieve Page Content",
+      "type": "n8n-nodes-base.notion",
+      "position": [
+        1296,
+        -176
+      ],
+      "typeVersion": 2.2,
+      "alwaysOutputData": false,
+      "credentials": {
+        "notionApi": {
+          "id": "4Lgcw3P0IFbjArgd",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 1,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "e5b605e5-6d05-4bca-8f19-a859e474620f",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              },
+              "leftValue": "={{ $json.type }}",
+              "rightValue": "image"
+            },
+            {
+              "id": "c7415859-5ffd-4c78-b497-91a3d6303b6f",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              },
+              "leftValue": "={{ $json.type }}",
+              "rightValue": "video"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b6566c3d-3eee-408c-90b1-6355fccedeae",
+      "name": "Filter Non-Text Content",
+      "type": "n8n-nodes-base.filter",
+      "position": [
+        1488,
+        -176
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "fieldsToSummarize": {
+          "values": [
+            {
+              "aggregation": "concatenate",
+              "field": "content",
+              "separateBy": "\n"
+            }
+          ]
+        },
+        "options": {
+          "outputFormat": "separateItems"
+        }
+      },
+      "id": "6f2bad97-3bb7-4b96-8fd2-62cffca0aaf5",
+      "name": "Summarize - Concatenate Notion's blocks content",
+      "type": "n8n-nodes-base.summarize",
+      "position": [
+        1680,
+        -176
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "jsonMode": "expressionData",
+        "jsonData": "={{ $json.concatenated_content }}",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "pageId",
+                "value": "={{ $('Notion - Page Added Trigger').item.json.id }}"
+              },
+              {
+                "name": "createdTime",
+                "value": "={{ $('Notion - Page Added Trigger').item.json.created_time }}"
+              },
+              {
+                "name": "pageTitle",
+                "value": "={{ $('Notion - Page Added Trigger').item.json.properties.Name.title[0].text.content }}"
+              }
+            ]
+          }
+        }
+      },
+      "id": "24ffb1d9-896d-4998-b8b7-0fda7af18500",
+      "name": "Create metadata and load content",
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "position": [
+        1856,
+        160
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-embedding-001"
+      },
+      "id": "3f771a43-5bff-46c5-9604-2e7a8f75e5ec",
+      "name": "Embeddings Google Gemini2",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "position": [
+        1888,
+        16
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "dmywV6bNQSsQoY0w",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "n8n",
+          "mode": "list",
+          "cachedResultName": "n8n"
+        },
+        "options": {}
+      },
+      "id": "01a7ccea-a090-4510-8e7a-c5ebe7eb642f",
+      "name": "Pinecone Vector Store2",
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "position": [
+        1888,
+        -176
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "pineconeApi": {
+          "id": "HugTgLBXHEiLBDnq",
+          "name": "PineconeApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# Notion",
+        "height": 784,
+        "width": 1168
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1072,
+        -256
+      ],
+      "typeVersion": 1,
+      "id": "73047a9f-17fd-40a7-955a-e772ae4abcf3",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "# Flow C — 守門員 (Watchdog)\n\n**三條監控路徑：**\n1. ⚠️ Error Trigger → Notion Log → LINE 通知\n2. 🔄 每晚 2AM → 查未索引頁面 → LINE 通知\n3. 📊 每週日 10AM → 品質抽查 → LINE 報告\n\n**使用前設定：**\n- `YOUR_LOG_DB_ID` → 換成你的 Notion Log DB ID\n- `YOUR_LINE_ADMIN_USER_ID` → 換成你的 LINE User ID\n- `YOUR_LINE_CHANNEL_ACCESS_TOKEN` → 換成你的 LINE Channel Access Token\n- `YOUR_KB_DB_ID` → 換成你的 Notion 知識庫 DB ID",
+        "height": 1200,
+        "width": 1200,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1072,
+        1400
+      ],
+      "typeVersion": 1,
+      "id": "92753730-1fba-4a36-ab65-9c0407e4cf2a",
+      "name": "Sticky Note — Flow C"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        1580
+      ],
+      "id": "003b92e6-c2af-4987-be9c-5eecae48e146",
+      "name": "Error Trigger"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "python",
+        "pythonCode": "from datetime import datetime\n\nitem = _input.all()[0].json\nwf = item.get('workflow', {})\nexec_data = item.get('execution', {})\nerr = exec_data.get('error', {})\n\nreturn [{'json': {\n    'errorType': 'WORKFLOW_ERROR',\n    'workflowName': wf.get('name', 'unknown'),\n    'workflowId': str(wf.get('id', '')),\n    'errorMessage': err.get('message', 'unknown error'),\n    'executionId': str(exec_data.get('id', '')),\n    'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),\n    'severity': 'HIGH',\n    'lineMessage': f\"⚠️ Workflow 錯誤！\\n\"\n                   f\"流程：{wf.get('name', 'unknown')}\\n\"\n                   f\"錯誤：{err.get('message', 'unknown')}\\n\"\n                   f\"時間：{datetime.now().strftime('%m/%d %H:%M')}\"\n}}]"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1360,
+        1580
+      ],
+      "id": "dd805c63-2adf-4e02-b1e6-22a8e58a58ca",
+      "name": "Code — Format Error"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "databaseId": {
+          "__rl": true,
+          "value": "YOUR_LOG_DB_ID",
+          "mode": "id"
+        },
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Name|title",
+              "title": "={{ $json.errorType }}: {{ $json.workflowName }}"
+            },
+            {
+              "key": "ErrorMessage|rich_text",
+              "richText": false,
+              "textContent": "={{ $json.errorMessage }}"
+            },
+            {
+              "key": "Severity|select",
+              "selectValue": "={{ $json.severity }}"
+            },
+            {
+              "key": "Timestamp|rich_text",
+              "richText": false,
+              "textContent": "={{ $json.timestamp }}"
+            },
+            {
+              "key": "ExecutionId|rich_text",
+              "richText": false,
+              "textContent": "={{ $json.executionId }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        1600,
+        1580
+      ],
+      "id": "3f427d54-bbc2-4371-9ff7-48e3877983b2",
+      "name": "Notion — Write Error Log",
+      "credentials": {
+        "notionApi": {
+          "id": "4Lgcw3P0IFbjArgd",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/push",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer YOUR_LINE_CHANNEL_ACCESS_TOKEN"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"to\": \"YOUR_LINE_ADMIN_USER_ID\",\n  \"messages\": [\n    {\n      \"type\": \"text\",\n      \"text\": \"{{ $json.lineMessage }}\"\n    }\n  ]\n}"
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1840,
+        1580
+      ],
+      "id": "9a6ff077-a86f-4ad6-bdce-c2f1bb950b44",
+      "name": "LINE Push — Error Alert"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 2 * * *"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        1120,
+        1960
+      ],
+      "id": "abb368b1-8595-4da2-8d49-ecca2f25d799",
+      "name": "Schedule — Nightly 2AM"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": {
+          "__rl": true,
+          "value": "YOUR_KB_DB_ID",
+          "mode": "id"
+        },
+        "returnAll": false,
+        "limit": 50,
+        "filterType": "string",
+        "filterJson": "={\"or\":[{\"property\":\"Status\",\"select\":{\"equals\":\"NEW\"}},{\"property\":\"Status\",\"select\":{\"equals\":\"\"}}]}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        1360,
+        1960
+      ],
+      "id": "1e79c0aa-a2ee-454f-9fed-edc32c94589c",
+      "name": "Notion — Query Pending Pages",
+      "credentials": {
+        "notionApi": {
+          "id": "4Lgcw3P0IFbjArgd",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 1,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "15b5ab84-2ffd-40e7-bc98-20e76fd55657",
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              },
+              "leftValue": "={{ $input.all().length }}",
+              "rightValue": 0
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1600,
+        1960
+      ],
+      "id": "3b15f120-593f-4e78-bee7-48a92c04b52b",
+      "name": "IF — Has Pending?"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "python",
+        "pythonCode": "from datetime import datetime\n\nitems = _input.all()\ncount = len(items)\ntitles = []\nfor i in items[:5]:\n    props = i.json.get('properties', {})\n    name_prop = props.get('Name', {}).get('title', [{}])\n    title = name_prop[0].get('text', {}).get('content', 'untitled') if name_prop else 'untitled'\n    titles.append(f'  - {title}')\n\nmore = f'\\n  ...還有 {count - 5} 筆' if count > 5 else ''\ntitle_list = '\\n'.join(titles)\n\nmsg = (f'🔄 每晚巡檢報告\\n'\n       f'發現 {count} 筆待索引頁面\\n'\n       f'{title_list}{more}\\n'\n       f'時間：{datetime.now().strftime(\"%m/%d %H:%M\")}')\n\nreturn [{'json': {'pendingCount': count, 'lineMessage': msg}}]"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1840,
+        1880
+      ],
+      "id": "a2043589-7874-43ef-b38b-c5b73fe287ff",
+      "name": "Code — Reindex Summary"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/push",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer YOUR_LINE_CHANNEL_ACCESS_TOKEN"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"to\": \"YOUR_LINE_ADMIN_USER_ID\",\n  \"messages\": [\n    {\n      \"type\": \"text\",\n      \"text\": \"{{ $json.lineMessage }}\"\n    }\n  ]\n}"
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2080,
+        1880
+      ],
+      "id": "4eb346d6-ccad-4af7-9b6e-5c6ca6e5c4bc",
+      "name": "LINE Push — Reindex Alert"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 10 * * 0"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        1120,
+        2340
+      ],
+      "id": "9f86dd2f-02b4-445f-9fb2-00cdc510bcb3",
+      "name": "Schedule — Weekly Sun 10AM"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "python",
+        "pythonCode": "# Prepare test queries for quality check\n# Customize these to match your knowledge base content\ntest_queries = [\n    '公司的主要產品有哪些？',\n    '退貨政策是什麼？',\n    '如何聯絡客服？'\n]\n\nimport random\nquery = random.choice(test_queries)\n\nreturn [{'json': {'testQuery': query}}]"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1360,
+        2340
+      ],
+      "id": "c3ec2b8f-dc93-4ac8-9329-3e0e15e971be",
+      "name": "Code — Prepare Test Query"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "n8n",
+          "mode": "list",
+          "cachedResultName": "n8n"
+        },
+        "prompt": "={{ $json.testQuery }}",
+        "topK": 3,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        1600,
+        2340
+      ],
+      "id": "d90da46f-62fe-4af6-9655-f3e2a8358f17",
+      "name": "Pinecone — Quality Test",
+      "credentials": {
+        "pineconeApi": {
+          "id": "HugTgLBXHEiLBDnq",
+          "name": "PineconeApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-embedding-001"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1600,
+        2560
+      ],
+      "id": "91b2a573-f885-410c-a183-bf9260e89fc7",
+      "name": "Embeddings Google Gemini — Quality",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "dmywV6bNQSsQoY0w",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "python",
+        "pythonCode": "from datetime import datetime\n\nitems = _input.all()\nresults = []\nfor item in items:\n    doc = item.json\n    results.append({\n        'content_preview': str(doc.get('document', {}).get('pageContent', ''))[:100],\n        'metadata': doc.get('document', {}).get('metadata', {})\n    })\n\nhas_results = len(results) > 0\nquery = items[0].json.get('testQuery', 'N/A') if items else 'N/A'\n\nif has_results:\n    previews = '\\n'.join([f\"  {i+1}. {r['content_preview']}...\" for i, r in enumerate(results[:3])])\n    msg = (f'📊 每週品質報告\\n'\n           f'測試問句：{query}\\n'\n           f'檢索結果：{len(results)} 筆\\n'\n           f'{previews}\\n'\n           f'狀態：✅ 正常\\n'\n           f'時間：{datetime.now().strftime(\"%m/%d %H:%M\")}')\n    quality = 'OK'\nelse:\n    msg = (f'📊 每週品質報告\\n'\n           f'測試問句：{query}\\n'\n           f'⚠️ 檢索結果為空！請檢查 Pinecone 索引\\n'\n           f'時間：{datetime.now().strftime(\"%m/%d %H:%M\")}')\n    quality = 'FAIL'\n\nreturn [{'json': {'quality': quality, 'resultCount': len(results), 'lineMessage': msg}}]"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1840,
+        2340
+      ],
+      "id": "aa0d5210-faf0-4223-8b29-8a6273fdd752",
+      "name": "Code — Evaluate Quality"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/push",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer YOUR_LINE_CHANNEL_ACCESS_TOKEN"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"to\": \"YOUR_LINE_ADMIN_USER_ID\",\n  \"messages\": [\n    {\n      \"type\": \"text\",\n      \"text\": \"{{ $json.lineMessage }}\"\n    }\n  ]\n}"
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2080,
+        2340
+      ],
+      "id": "fce8d10c-115a-4567-80ff-15f895694695",
+      "name": "LINE Push — Quality Report"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Search files and folders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search files and folders": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recursive Character Text Splitter": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Default Data Loader",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Line Messaging Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Line Messaging",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Token Splitter": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Create metadata and load content",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Non-Text Content": {
+      "main": [
+        [
+          {
+            "node": "Summarize - Concatenate Notion's blocks content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion - Page Added Trigger": {
+      "main": [
+        [
+          {
+            "node": "Notion - Retrieve Page Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion - Retrieve Page Content": {
+      "main": [
+        [
+          {
+            "node": "Filter Non-Text Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create metadata and load content": {
+      "ai_document": [
+        [
+          {
+            "node": "Pinecone Vector Store2",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize - Concatenate Notion's blocks content": {
+      "main": [
+        [
+          {
+            "node": "Pinecone Vector Store2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini2": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store2",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code — Format Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code — Format Error": {
+      "main": [
+        [
+          {
+            "node": "Notion — Write Error Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion — Write Error Log": {
+      "main": [
+        [
+          {
+            "node": "LINE Push — Error Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule — Nightly 2AM": {
+      "main": [
+        [
+          {
+            "node": "Notion — Query Pending Pages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion — Query Pending Pages": {
+      "main": [
+        [
+          {
+            "node": "IF — Has Pending?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF — Has Pending?": {
+      "main": [
+        [
+          {
+            "node": "Code — Reindex Summary",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Code — Reindex Summary": {
+      "main": [
+        [
+          {
+            "node": "LINE Push — Reindex Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule — Weekly Sun 10AM": {
+      "main": [
+        [
+          {
+            "node": "Code — Prepare Test Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code — Prepare Test Query": {
+      "main": [
+        [
+          {
+            "node": "Pinecone — Quality Test",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone — Quality Test": {
+      "main": [
+        [
+          {
+            "node": "Code — Evaluate Quality",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code — Evaluate Quality": {
+      "main": [
+        [
+          {
+            "node": "LINE Push — Quality Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini — Quality": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone — Quality Test",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "fd51e991-6c03-49fb-b042-84ac92b91dbc",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4b0996d73576c99ebb925815cb8955d2044410839318fe3d4d34ad97ad3d941c"
+  },
+  "id": "PDKBA4NJqzwKoRXh",
+  "tags": []
+}
