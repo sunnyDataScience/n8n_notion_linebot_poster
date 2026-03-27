@@ -28,7 +28,24 @@ if %ERRORLEVEL% neq 0 (
 )
 :ssl_ready
 
-echo [1/2] Generating SSL certificates...
+echo [0/3] Starting Docker Desktop...
+
+REM Check if Docker is running
+docker info >nul 2>nul
+if %ERRORLEVEL% neq 0 (
+    echo [INFO] Docker is not running. Starting Docker Desktop...
+    start "" "C:\Program Files\Docker\Docker\Docker Desktop.exe"
+    echo [INFO] Waiting for Docker to start...
+    :wait_docker
+    timeout /t 3 /nobreak >nul
+    docker info >nul 2>nul
+    if %ERRORLEVEL% neq 0 goto :wait_docker
+)
+
+echo [OK] Docker is running.
+echo.
+
+echo [1/3] Generating SSL certificates...
 
 if not exist "%CERT_DIR%" mkdir "%CERT_DIR%"
 
@@ -43,7 +60,24 @@ if %ERRORLEVEL% neq 0 (
 echo [OK] SSL certs generated in %CERT_DIR%
 echo.
 
-echo [2/2] Starting Docker Compose...
+echo [2/3] Loading n8n Docker image...
+
+if exist "%ROOT_DIR%n8n.tar" (
+    docker load -i "%ROOT_DIR%n8n.tar"
+
+    if %ERRORLEVEL% neq 0 (
+        echo [ERROR] Docker image load failed.
+        pause
+        exit /b 1
+    )
+
+    echo [OK] n8n image loaded.
+) else (
+    echo [SKIP] n8n.tar not found, skipping docker load.
+)
+echo.
+
+echo [3/3] Starting Docker Compose...
 
 cd /d "%ROOT_DIR%docker"
 docker compose up -d
