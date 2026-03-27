@@ -1,0 +1,310 @@
+{
+  "id": "workshop_practice_02",
+  "name": "練習二 — 匯率警報看板（標準答案）",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "p2-trigger-0001",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -608,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://tw.rter.info/capi.php",
+        "options": {}
+      },
+      "id": "p2-http-0001",
+      "name": "GET — 即時匯率 JSON",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -304,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Step 3: Extract 3 currencies from 200+ pairs\nconst raw = $input.first().json;\n\n// Handle both cases: n8n auto-parsed JSON or string in data field\nconst data = (typeof raw.data === 'string') ? JSON.parse(raw.data) : raw;\n\nreturn [{\n  json: {\n    jpy_rate: data.USDJPY.Exrate,\n    jpy_label: '1 USD = ¥' + data.USDJPY.Exrate,\n    twd_rate: data.USDTWD.Exrate,\n    twd_label: '1 USD = NT$' + data.USDTWD.Exrate,\n    krw_rate: data.USDKRW.Exrate,\n    krw_label: '1 USD = ₩' + data.USDKRW.Exrate,\n    updated: data.USDJPY.UTC\n  }\n}];\n"
+      },
+      "id": "p2-code-0001",
+      "name": "Code — 篩選三種幣別",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "condition-jpy",
+              "leftValue": "={{ $json.jpy_rate }}",
+              "rightValue": 155,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "p2-if-0001",
+      "name": "IF — 日圓 > 155？",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        304,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "set-verdict",
+              "name": "verdict",
+              "value": "=好消息！日圓便宜了，可以換匯！",
+              "type": "string"
+            },
+            {
+              "id": "set-jpy",
+              "name": "jpy",
+              "value": "={{ $json.jpy_label }}",
+              "type": "string"
+            },
+            {
+              "id": "set-twd",
+              "name": "twd",
+              "value": "={{ $json.twd_label }}",
+              "type": "string"
+            },
+            {
+              "id": "set-krw",
+              "name": "krw",
+              "value": "={{ $json.krw_label }}",
+              "type": "string"
+            },
+            {
+              "id": "set-msg-good",
+              "name": "message",
+              "value": "=旅遊匯率看板 ({{ $json.updated }})\n---\n日圓：{{ $json.jpy_label }}\n台幣：{{ $json.twd_label }}\n韓元：{{ $json.krw_label }}\n---\n判斷：日圓超過 155，現在換匯划算！",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "p2-set-good",
+      "name": "Set — 好消息通知",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        608,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "set-verdict2",
+              "name": "verdict",
+              "value": "=再等等，日圓還沒到甜蜜點",
+              "type": "string"
+            },
+            {
+              "id": "set-jpy2",
+              "name": "jpy",
+              "value": "={{ $json.jpy_label }}",
+              "type": "string"
+            },
+            {
+              "id": "set-twd2",
+              "name": "twd",
+              "value": "={{ $json.twd_label }}",
+              "type": "string"
+            },
+            {
+              "id": "set-krw2",
+              "name": "krw",
+              "value": "={{ $json.krw_label }}",
+              "type": "string"
+            },
+            {
+              "id": "set-msg-wait",
+              "name": "message",
+              "value": "=旅遊匯率看板 ({{ $json.updated }})\n---\n日圓：{{ $json.jpy_label }}\n台幣：{{ $json.twd_label }}\n韓元：{{ $json.krw_label }}\n---\n判斷：日圓未超過 155，建議再觀望。",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "p2-set-wait",
+      "name": "Set — 再等等通知",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        608,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 練習二：匯率警報看板（標準答案）\n\n**流程：**\n1. Manual Trigger 啟動\n2. HTTP GET 抓即時匯率 JSON\n3. Code 從 200+ 幣別篩出 JPY/TWD/KRW\n4. IF 判斷日圓是否超過 155\n5. Set 格式化人類可讀的提醒訊息\n\n**驗收：**\n✅ Code 輸出含 jpy/twd/krw 匯率\n✅ IF 根據當前匯率走正確分支\n✅ Set 輸出完整提醒訊息",
+        "height": 360,
+        "width": 340,
+        "color": 4
+      },
+      "id": "p2-sticky-main",
+      "name": "Sticky Note — 說明",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -976,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### Step 2: HTTP GET\n\nURL: `https://tw.rter.info/capi.php`\n免認證 JSON API\n\n回傳 200+ 種幣別匯率\n→ 點 Output 找 USDJPY",
+        "height": 288,
+        "color": 6
+      },
+      "id": "p2-sticky-http",
+      "name": "Sticky Note — HTTP",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -368,
+        592
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### Step 3: Code 篩選\n\n從大物件中取值：\n`raw.USDJPY.Exrate`\n`raw.USDTWD.Exrate`\n`raw.USDKRW.Exrate`\n\nJSON 取值 = L02 Expression",
+        "height": 276,
+        "color": 3
+      },
+      "id": "p2-sticky-code",
+      "name": "Sticky Note — Code",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -64,
+        592
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### Step 4: IF 判斷\n\n`jpy_rate > 155` ？\n\ntrue = 日圓貶值 = 換匯划算\nfalse = 還沒到甜蜜點\n\n數值比較 = L05 IF 節點",
+        "height": 260,
+        "color": 5
+      },
+      "id": "p2-sticky-if",
+      "name": "Sticky Note — IF",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        240,
+        592
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### Step 5: Set 格式化\n\ntrue / false 各一個 Set\n用 Expression 組合訊息：\n\n`旅遊匯率看板`\n`日圓：{{ $json.jpy_label }}`\n`判斷：...`\n\n文字串接 = L06 Set 節點",
+        "height": 280,
+        "color": 2
+      },
+      "id": "p2-sticky-set",
+      "name": "Sticky Note — Set",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        544,
+        688
+      ]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "GET — 即時匯率 JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET — 即時匯率 JSON": {
+      "main": [
+        [
+          {
+            "node": "Code — 篩選三種幣別",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code — 篩選三種幣別": {
+      "main": [
+        [
+          {
+            "node": "IF — 日圓 > 155？",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF — 日圓 > 155？": {
+      "main": [
+        [
+          {
+            "node": "Set — 好消息通知",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set — 再等等通知",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {
+    "GET — 即時匯率 JSON": [
+      {
+        "data": "{\"USDFKP\": {\"Exrate\": 0.753558, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDITL\": {\"Exrate\": 1700.272217, \"UTC\": \"2017-02-24 19:34:31\"}, \"USDCNH\": {\"Exrate\": 6.919686, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDLAK\": {\"Exrate\": 21737.5, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDZMW\": {\"Exrate\": 18.826587, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDAOA\": {\"Exrate\": 917.0, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDTTD\": {\"Exrate\": 6.795201, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDNAD\": {\"Exrate\": 17.05, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDUSD\": {\"Exrate\": 1.0, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDSVC\": {\"Exrate\": 8.75063, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDMXN\": {\"Exrate\": 18.121453, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDXCG\": {\"Exrate\": 1.802452, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDIRR\": {\"Exrate\": 1313300.0, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDSHP\": {\"Exrate\": 0.753558, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDISK\": {\"Exrate\": 124.74, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDBBD\": {\"Exrate\": 2.0, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDLTC\": {\"Exrate\": 0.2607561929595828, \"UTC\": \"2018-08-02 21:56:02\"}, \"USDMXV\": {\"Exrate\": 3.079749, \"UTC\": \"2018-08-01 13:30:00\"}, \"USDDJF\": {\"Exrate\": 178.0, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDLVL\": {\"Exrate\": 0.62055, \"UTC\": \"2015-06-22 08:37:00\"}, \"USDNGN\": {\"Exrate\": 1383.08, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDAWG\": {\"Exrate\": 1.8, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDJEP\": {\"Exrate\": 0.753558, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDUZS\": {\"Exrate\": 12205.0, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDSLE\": {\"Exrate\": 24.55, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDHUX\": {\"Exrate\": 274.959991, \"UTC\": \"2018-08-01 10:30:05\"}, \"USDMVR\": {\"Exrate\": 15.45, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDTZS\": {\"Exrate\": 2576.487, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDIEP\": {\"Exrate\": 0.699154, \"UTC\": \"2015-06-23 04:53:00\"}, \"USDKYD\": {\"Exrate\": 0.833446, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDSTN\": {\"Exrate\": 21.35, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDPHP\": {\"Exrate\": 60.480998, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDUYU\": {\"Exrate\": 40.631873, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDFJD\": {\"Exrate\": 2.251885, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDCAD\": {\"Exrate\": 1.388595, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDMYR\": {\"Exrate\": 4.0135, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDHNL\": {\"Exrate\": 26.509999, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDCVE\": {\"Exrate\": 95.875, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDSRD\": {\"Exrate\": 37.601, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDSEK\": {\"Exrate\": 9.471179, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDEGP\": {\"Exrate\": 52.7014, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDCUP\": {\"Exrate\": 25.75, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDGBP\": {\"Exrate\": 0.753558, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDCZK\": {\"Exrate\": 21.305834, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDSTD\": {\"Exrate\": 22281.8, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDIMP\": {\"Exrate\": 0.753558, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDXCD\": {\"Exrate\": 2.70255, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDLSL\": {\"Exrate\": 17.05, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDWST\": {\"Exrate\": 2.74422, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDTJS\": {\"Exrate\": 9.556069, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDKES\": {\"Exrate\": 129.9, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDKPW\": {\"Exrate\": 900.0, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDFRF\": {\"Exrate\": 1700.272217, \"UTC\": \"2017-02-27 21:21:09\"}, \"USDMWK\": {\"Exrate\": 1737.0, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDTRY\": {\"Exrate\": 44.459799, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDBGN\": {\"Exrate\": 1.698681, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDBWP\": {\"Exrate\": 13.729041, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDGIP\": {\"Exrate\": 0.753558, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDSLL\": {\"Exrate\": 20969.5, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDCUC\": {\"Exrate\": 1.0, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDCHF\": {\"Exrate\": 0.798593, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDBOB\": {\"Exrate\": 6.936019, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDBTC\": {\"Exrate\": 1.5197608e-05, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDBND\": {\"Exrate\": 1.283101, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDXDR\": {\"Exrate\": 0.706792, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDPLN\": {\"Exrate\": 3.723039, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDVEF\": {\"Exrate\": 248487.642241, \"UTC\": \"2021-01-04 18:59:59\"}, \"USDSIT\": {\"Exrate\": 216.486755, \"UTC\": \"2015-07-27 13:25:00\"}, \"USDBYN\": {\"Exrate\": 2.976987, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDLBP\": {\"Exrate\": 89550.0, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDBRX\": {\"Exrate\": 3.7485, \"UTC\": \"2018-08-01 16:15:02\"}, \"USDLYD\": {\"Exrate\": 6.375, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDGMD\": {\"Exrate\": 73.5, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDXAU\": {\"Exrate\": 0.00022139, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDYER\": {\"Exrate\": 238.624958, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDAFN\": {\"Exrate\": 63.499997, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDAED\": {\"Exrate\": 3.67315, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDCDF\": {\"Exrate\": 2282.5, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDBDT\": {\"Exrate\": 122.71271, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDCNY\": {\"Exrate\": 6.9119, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDSZL\": {\"Exrate\": 17.05, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDSSP\": {\"Exrate\": 130.26, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDHRK\": {\"Exrate\": 6.54379, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDMOP\": {\"Exrate\": 8.069509, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDLRD\": {\"Exrate\": 183.625016, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDDKK\": {\"Exrate\": 6.490315, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDSDG\": {\"Exrate\": 600.5, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDNOK\": {\"Exrate\": 9.751542, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDRWF\": {\"Exrate\": 1461.0, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDSCR\": {\"Exrate\": 13.968896, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDKZT\": {\"Exrate\": 483.490093, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDSYP\": {\"Exrate\": 13002.0, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDRON\": {\"Exrate\": 4.4276, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDAUD\": {\"Exrate\": 1.455095, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDMRO\": {\"Exrate\": 356.999828, \"UTC\": \"2021-12-22 11:59:59\"}, \"USDAMD\": {\"Exrate\": 377.005904, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDMZN\": {\"Exrate\": 63.899993, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDECS\": {\"Exrate\": 25000.0, \"UTC\": \"2017-02-24 19:27:22\"}, \"USDPAB\": {\"Exrate\": 1.0, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDZWG\": {\"Exrate\": 25.3626, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDSGD\": {\"Exrate\": 1.288425, \"UTC\": \"2026-03-27 18:59:59\"}, \"USD\": {\"Exrate\": 1.0, \"UTC\": \"2018-08-02 07:00:00\"}, \"USDKRW\": {\"Exrate\": 1511.662846, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDXPT\": {\"Exrate\": 0.00053154, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDLKR\": {\"Exrate\": 315.037788, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDDZD\": {\"Exrate\": 133.119719, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDRSD\": {\"Exrate\": 101.967, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDCRC\": {\"Exrate\": 464.427029, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDTOP\": {\"Exrate\": 2.40776, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDCLF\": {\"Exrate\": 0.023432, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDILS\": {\"Exrate\": 3.13777, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDGGP\": {\"Exrate\": 0.753558, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDPKR\": {\"Exrate\": 279.2, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDARS\": {\"Exrate\": 1385.5121, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDKHR\": {\"Exrate\": 4012.0, \"UTC\": \"2026-03-27 18:59:59\"}, \"XAUX\": {\"Exrate\": 0.000816, \"UTC\": \"2018-08-02 07:58:38\"}, \"USDSOS\": {\"Exrate\": 571.5, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDGYD\": {\"Exrate\": 209.354865, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDANG\": {\"Exrate\": 1.79, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDBAM\": {\"Exrate\": 1.694558, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDLTL\": {\"Exrate\": 3.0487, \"UTC\": \"2015-06-22 08:39:00\"}, \"USDKGS\": {\"Exrate\": 87.45, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDPEN\": {\"Exrate\": 3.4595, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDSBD\": {\"Exrate\": 8.042037, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDNZD\": {\"Exrate\": 1.741493, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDGNF\": {\"Exrate\": 8780.0, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDMNT\": {\"Exrate\": 3569.47, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDVND\": {\"Exrate\": 26337.5, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDAZN\": {\"Exrate\": 1.703517, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDBTN\": {\"Exrate\": 94.096233, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDALL\": {\"Exrate\": 83.35, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDVUV\": {\"Exrate\": 119.389, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDZAR\": {\"Exrate\": 17.140295, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDNIO\": {\"Exrate\": 36.71, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDXOF\": {\"Exrate\": 569.72869, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDDOP\": {\"Exrate\": 59.725, \"UTC\": \"2026-03-27 18:59:59\"}, \"SILVER1OZ999NY\": {\"Exrate\": 0.064809, \"UTC\": \"2018-08-02 07:58:38\"}, \"USDXAF\": {\"Exrate\": 569.72869, \"UTC\": \"2026-03-27 18:59:59\"}, \"PALLADIUM1OZ\": {\"Exrate\": 0.001099, \"UTC\": \"2018-08-02 07:58:38\"}, \"USDJOD\": {\"Exrate\": 0.709, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDXAG\": {\"Exrate\": 0.01423903, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDMGA\": {\"Exrate\": 4175.0, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDIDR\": {\"Exrate\": 16980.55, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDCLP\": {\"Exrate\": 925.22, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDGEL\": {\"Exrate\": 2.69, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDUAH\": {\"Exrate\": 43.837192, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDHUF\": {\"Exrate\": 338.1875, \"UTC\": \"2026-03-27 18:59:59\"}, \"COPPERHIGHGRADE\": {\"Exrate\": 0.363702, \"UTC\": \"2018-08-02 07:58:38\"}, \"USDTHB\": {\"Exrate\": 32.9105, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDMDL\": {\"Exrate\": 17.566669, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDBYR\": {\"Exrate\": 20020.0, \"UTC\": \"2016-06-30 13:27:21\"}, \"USDETB\": {\"Exrate\": 156.925, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDDEM\": {\"Exrate\": 1.71745, \"UTC\": \"2015-06-22 07:35:00\"}, \"USDDOGE\": {\"Exrate\": 5455.376655570431, \"UTC\": \"2018-08-02 21:56:02\"}, \"USDSAR\": {\"Exrate\": 3.752422, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDMRU\": {\"Exrate\": 40.12, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDQAR\": {\"Exrate\": 3.65325, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDEUR\": {\"Exrate\": 0.868546, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDJMD\": {\"Exrate\": 157.422717, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDPYG\": {\"Exrate\": 6538.91334, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDIQD\": {\"Exrate\": 1310.0, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDBMD\": {\"Exrate\": 1.0, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDGTQ\": {\"Exrate\": 7.653901, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDXPD\": {\"Exrate\": 0.00072957, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDKWD\": {\"Exrate\": 0.30789, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDPGK\": {\"Exrate\": 4.309, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDMAD\": {\"Exrate\": 9.3445, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDZWL\": {\"Exrate\": 322.0, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDBZD\": {\"Exrate\": 2.011341, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDKMF\": {\"Exrate\": 428.000124, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDOMR\": {\"Exrate\": 0.384495, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDTMT\": {\"Exrate\": 3.5, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDXPF\": {\"Exrate\": 103.645082, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDMMK\": {\"Exrate\": 2099.81, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDERN\": {\"Exrate\": 15.0, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDTND\": {\"Exrate\": 2.9265, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDBIF\": {\"Exrate\": 2968.5, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDBHD\": {\"Exrate\": 0.37708, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDTWD\": {\"Exrate\": 32.008498, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDHKD\": {\"Exrate\": 7.833085, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDCOP\": {\"Exrate\": 3673.068658, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDGHS\": {\"Exrate\": 10.9675, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDRUB\": {\"Exrate\": 81.501091, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDMKD\": {\"Exrate\": 53.520958, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDINR\": {\"Exrate\": 94.746546, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDNPR\": {\"Exrate\": 150.534762, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDVES\": {\"Exrate\": 467.928097, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDUGX\": {\"Exrate\": 3725.697123, \"UTC\": \"2026-03-27 18:59:59\"}, \"PLATINUM1UZ999\": {\"Exrate\": 0.001223, \"UTC\": \"2018-08-02 07:58:38\"}, \"USDJPY\": {\"Exrate\": 160.24970588, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDBSD\": {\"Exrate\": 1.0, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDBRL\": {\"Exrate\": 5.2615, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDMUR\": {\"Exrate\": 46.699999, \"UTC\": \"2026-03-27 18:59:59\"}, \"USDHTG\": {\"Exrate\": 131.099237, \"UTC\": \"2026-03-27 18:59:59\"}}"
+      }
+    ]
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9c10b22a58a4f5a4bf4bd3896160475e71228854bcdea2e0475e1358324e7bd5"
+  }
+}
