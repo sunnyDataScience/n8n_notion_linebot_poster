@@ -1,0 +1,43 @@
+volumes:
+  n8n_storage:
+
+services:
+  n8n:
+    image: n8nio/n8n:latest
+    restart: always
+    environment:
+      - N8N_EDITOR_BASE_URL=https://localhost:8443
+      - WEBHOOK_URL=https://localhost:8443/
+      # --- Task Runner (外部模式) 核心設定 ---
+      - N8N_RUNNERS_ENABLED=true
+      - N8N_RUNNERS_MODE=external
+      # 允許 Runner 透過容器內部網路連線進來
+      - N8N_RUNNERS_BROKER_LISTEN_ADDRESS=0.0.0.0
+      # 通訊驗證密碼 (請保持兩邊設定一致，您可以自行修改為更複雜的字串)
+      - N8N_RUNNERS_AUTH_TOKEN=my_super_secret_token_123
+      - NODE_FUNCTION_ALLOW_BUILTIN=*
+    volumes:
+      - n8n_storage:/home/node/.n8n
+
+  # 專門負責執行 Python 與 JS 的 Task Runner 容器
+  n8n-task-runner:
+    image: n8nio/runners:latest
+    restart: always
+    environment:
+      # 指向 n8n 主程式的預設溝通 Port (5679)
+      - N8N_RUNNERS_TASK_BROKER_URI=http://n8n:5679
+      # 密碼必須與上方 n8n 容器的設定完全相同
+      - N8N_RUNNERS_AUTH_TOKEN=my_super_secret_token_123
+      - NODE_FUNCTION_ALLOW_BUILTIN=*
+    depends_on:
+      - n8n
+
+  nginx:
+    image: nginx:latest
+    restart: always
+    ports:
+      - "8088:80"   # For HTTP -> HTTPS redirect
+      - "8443:443"  # For HTTPS access
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./nginx/certs:/etc/nginx/certs

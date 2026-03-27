@@ -1,0 +1,279 @@
+{
+  "name": "L02 — JSON 資料流（看懂節點之間的資料）",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "ffbb98d6-b758-41ac-b7cb-f20ab1e26006",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -576,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "weightedAmount",
+              "value": "={{ Math.round($json.amount * $json.probability / 100) }}",
+              "type": "number"
+            },
+            {
+              "id": "2",
+              "name": "dealSummary",
+              "value": "={{ $json.salesRep }} — {{ $json.customer }} — ${{ $json.amount }}",
+              "type": "string"
+            },
+            {
+              "id": "3",
+              "name": "isHighValue",
+              "value": "={{ $json.amount >= 1000000 }}",
+              "type": "boolean"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "9dc76daf-ff4a-4df5-bdd0-041b57ecbe7e",
+      "name": "Edit Fields — 加工計算",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -288,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.isHighValue }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
+              "id": "a5e74325-fdf0-43cd-8c73-353f44173a0b"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "05f5190d-d5b8-4d57-b045-19efef626487",
+      "name": "IF — 高價值商機？",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -32,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "tag",
+              "value": "重點客戶 — 需主管關注",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "bae3f06a-20f8-4365-bbf1-38eba0100dcf",
+      "name": "高價值 — 標記",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "tag",
+              "value": "一般商機",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "224abe7f-0a75-41d3-a487-d06ed5330367",
+      "name": "一般 — 標記",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## L02：JSON 資料流\n### 看懂節點之間傳了什麼\n\n**學習目標：**\n1. 理解 JSON 的 key-value 結構\n2. 學會用 Expression 取值和計算\n3. 觀察「多筆資料」如何逐筆流動\n4. IF 節點根據計算結果分流\n\n**pinData 有 3 筆銷售資料：**\n- 台積電 $1,500,000（高價值）\n- 悠遊卡 $180,000（一般）\n- 捷安特 $1,400,000（高價值）\n\n**動手試試：**\n1. 執行後，點每個節點看 Output\n2. 觀察 3 筆資料怎麼分成兩路\n3. 改 pinData 的 amount 再跑一次",
+        "height": 480,
+        "width": 500,
+        "color": 4
+      },
+      "id": "3bcf1b18-eed8-46e1-abcb-a9843ad8e00d",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1104,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### Expression 語法\n\n文字組合：\n`{{ $json.salesRep }}`\n\n數學運算：\n`{{ $json.amount * $json.probability / 100 }}`\n\n判斷：\n`{{ $json.amount >= 1000000 }}`",
+        "height": 236,
+        "width": 432,
+        "color": 3
+      },
+      "id": "d21efe31-2882-4acf-80a6-a4b7b2c5eb67",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -336,
+        16
+      ]
+    }
+  ],
+  "pinData": {
+    "Manual Trigger": [
+      {
+        "json": {
+          "id": 6,
+          "salesRep": "林志明",
+          "department": "企業方案部",
+          "region": "北區",
+          "customer": "台積電",
+          "industry": "半導體",
+          "product": "資安防護旗艦方案",
+          "category": "資安方案",
+          "unitPrice": 1500000,
+          "quantity": 1,
+          "amount": 1500000,
+          "stage": "提案中",
+          "probability": 25,
+          "createdDate": "2025-02-15",
+          "expectedCloseDate": "2025-08-30"
+        }
+      },
+      {
+        "json": {
+          "id": 10,
+          "salesRep": "張家豪",
+          "department": "中小企業部",
+          "region": "北區",
+          "customer": "悠遊卡公司",
+          "industry": "電子支付",
+          "product": "API 整合閘道",
+          "category": "開發工具",
+          "unitPrice": 180000,
+          "quantity": 1,
+          "amount": 180000,
+          "stage": "成交",
+          "probability": 100,
+          "createdDate": "2024-10-25",
+          "expectedCloseDate": "2025-01-31"
+        }
+      },
+      {
+        "json": {
+          "id": 16,
+          "salesRep": "王美玲",
+          "department": "中小企業部",
+          "region": "中區",
+          "customer": "巨大機械（捷安特）",
+          "industry": "機械製造",
+          "product": "智慧工廠監控系統",
+          "category": "IoT 方案",
+          "unitPrice": 350000,
+          "quantity": 4,
+          "amount": 1400000,
+          "stage": "報價中",
+          "probability": 65,
+          "createdDate": "2025-01-10",
+          "expectedCloseDate": "2025-05-15"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields — 加工計算",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields — 加工計算": {
+      "main": [
+        [
+          {
+            "node": "IF — 高價值商機？",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF — 高價值商機？": {
+      "main": [
+        [
+          {
+            "node": "高價值 — 標記",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "一般 — 標記",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "520e787d-b4b1-4351-a698-e2d9710e95e0",
+  "meta": {
+    "instanceId": "5c382041e9e21f3536f4e542bc076d9d20bdb81ee8b1cce212b601f3a071f8be"
+  },
+  "id": "ncz6BYuaYFMyu2lQ",
+  "tags": []
+}

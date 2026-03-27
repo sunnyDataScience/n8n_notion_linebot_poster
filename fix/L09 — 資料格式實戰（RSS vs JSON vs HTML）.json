@@ -1,0 +1,171 @@
+{
+  "name": "L09 — 資料格式實戰（RSS vs JSON vs HTML）",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "32a03c5f-ac12-4df4-9f9e-8213783c4143",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -784,
+        2656
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://technews.tw/feed/",
+        "options": {}
+      },
+      "id": "63c8d293-997c-4013-a222-4a9f34508803",
+      "name": "GET — 科技新報 RSS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -272,
+        2400
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://tw.rter.info/capi.php",
+        "options": {}
+      },
+      "id": "7ab17971-34ae-4b13-8c56-46b24b2a918b",
+      "name": "GET — 台幣匯率 JSON",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        96,
+        2768
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://www.ithome.com.tw/",
+        "options": {}
+      },
+      "id": "119ce30a-2d34-4e3b-9711-4bfcb4385549",
+      "name": "GET — iThome 首頁 HTML",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -176,
+        2912
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## L09：資料格式實戰\n### 用台灣真實網站比較 RSS vs JSON vs HTML\n\n**學習目標：**\n1. 三種格式的差異（結構化 vs 非結構化）\n2. n8n 怎麼處理不同格式\n3. 為什麼 JSON 最好用、HTML 最難處理\n\n**三條路徑（全部免認證、台灣來源）：**\n\n| 路徑 | 來源 | 格式 | 結構化？ |\n|------|------|------|----------|\n| 上 | 科技新報 | RSS (XML) | 結構化 |\n| 中 | tw.rter.info | JSON | 結構化 |\n| 下 | iThome | HTML | 非結構化 |\n\n**觀察重點（執行後點開 Output）：**\n1. RSS → n8n 自動轉成 JSON，但結構是巢狀的\n2. JSON → 乾淨的 key-value，程式最愛\n3. HTML → 一大坨文字，資料藏在標籤裡\n\n**結論：**\n能用 JSON API 就用 JSON\n有 RSS 也不錯（n8n 自動轉）\nHTML 是最後手段（要自己挖資料）\n\n**對應教材：** 06b_資料格式與網頁結構.md",
+        "height": 640,
+        "width": 540,
+        "color": 4
+      },
+      "id": "16d7777b-2b0e-451a-9fe4-27ff1adb9910",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1440,
+        2288
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### RSS (XML) — 科技新報\ntechnews.tw/feed/\n\n台灣科技新聞的 RSS Feed\n回傳 XML 格式，包含：\n- 文章標題\n- 連結\n- 發布時間\n- 摘要\n\nn8n 會自動把 XML\n轉成 JSON 給你用\n\n→ 看 Output 的巢狀結構\n→ 找 channel.item 陣列",
+        "height": 320,
+        "width": 220,
+        "color": 6
+      },
+      "id": "975e0865-591c-409a-b9b9-60731402ccac",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -352,
+        2048
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### JSON — 台幣匯率\ntw.rter.info/capi.php\n\n回傳乾淨的 JSON：\n```\n{\n  \"USDTWD\": {\n    \"Exrate\": 32.485,\n    \"UTC\": \"2026-03-25\"\n  }\n}\n```\n\n→ 最容易處理！\n→ 直接 `$json.USDTWD.Exrate`\n→ 不需要額外解析",
+        "height": 320,
+        "color": 3
+      },
+      "id": "f66a5f9b-fbbd-438e-84d3-730e97d604f6",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        16,
+        2416
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### HTML — iThome 首頁\nwww.ithome.com.tw\n\n回傳一大堆 HTML 原始碼\n資料「藏在」排版標籤裡：\n```html\n<div class=\"title\">\n  <a href=\"/news/...\">新聞標題</a>\n</div>\n```\n\n→ 要用 CSS Selector 挖\n→ 這就是「爬蟲」\n→ 網頁改版就壞掉\n\n**優先順序：**\nJSON > RSS > HTML",
+        "height": 356,
+        "color": 5
+      },
+      "id": "f7104f50-91bc-46fd-ab4f-8f0753026f60",
+      "name": "Sticky Note3",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -256,
+        3088
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### 怎麼知道該用哪種？\n\n1. 先找 JSON API（最優先）\n2. 找 RSS Feed（次優）\n3. 最後才爬 HTML（最後手段）\n\n**怎麼找 RSS：**\n網址加 /feed 或 /rss 試試\n或在原始碼搜尋 rss+xml\n\n**怎麼找 JSON API：**\n按 F12 → Network → XHR\n看瀏覽器偷偷打了什麼 API\n→ 詳見 06b 教材第 8 章",
+        "height": 320,
+        "color": 2
+      },
+      "id": "243ee32f-a548-42ff-acaa-3c1e13957930",
+      "name": "Sticky Note4",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -816,
+        2800
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "GET — 科技新報 RSS",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "GET — 台幣匯率 JSON",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "GET — iThome 首頁 HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "1e43e3c2-de82-4185-a196-c74689f6fb18",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5c382041e9e21f3536f4e542bc076d9d20bdb81ee8b1cce212b601f3a071f8be"
+  },
+  "id": "ncz6BYuaYFMyu2lQ",
+  "tags": []
+}

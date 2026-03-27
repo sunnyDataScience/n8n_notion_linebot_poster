@@ -1,0 +1,283 @@
+{
+  "name": "L03 — HTTP Request（查台灣公開資料 + POST 到 CRM）",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "83864086-c55a-42f3-988d-134374c3727e",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1552,
+        576
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "salesRep",
+              "value": "林志明",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "customer",
+              "value": "台積電",
+              "type": "string"
+            },
+            {
+              "id": "3",
+              "name": "amount",
+              "value": 1500000,
+              "type": "number"
+            },
+            {
+              "id": "4",
+              "name": "stage",
+              "value": "提案中",
+              "type": "string"
+            },
+            {
+              "id": "5",
+              "name": "stockNo",
+              "value": "2330",
+              "type": "string"
+            },
+            {
+              "id": "6",
+              "name": "queryDate",
+              "value": "20250301",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1c78590f-ac17-489c-8b0c-0b65ddb94947",
+      "name": "Edit Fields — 銷售資料",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1152,
+        576
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://tw.rter.info/capi.php",
+        "options": {}
+      },
+      "id": "7e6f0e15-c5e2-4e67-a76b-4eb3e48d7765",
+      "name": "GET — 台幣即時匯率",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -688,
+        368
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://www.twse.com.tw/exchangeReport/STOCK_DAY",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "response",
+              "value": "json"
+            },
+            {
+              "name": "date",
+              "value": "={{ $json.queryDate }}"
+            },
+            {
+              "name": "stockNo",
+              "value": "={{ $json.stockNo }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "06b6f301-ad0b-4726-b9a2-bbb32b5fc3c9",
+      "name": "GET — 台積電月成交資訊",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -352,
+        576
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://httpbin.org/post",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "dealId",
+              "value": "=DEAL-{{ $now.toFormat(\"yyyyMMddHHmmss\") }}"
+            },
+            {
+              "name": "salesRep",
+              "value": "={{ $json.salesRep }}"
+            },
+            {
+              "name": "customer",
+              "value": "={{ $json.customer }}"
+            },
+            {
+              "name": "amount",
+              "value": "={{ $json.amount }}"
+            },
+            {
+              "name": "stage",
+              "value": "={{ $json.stage }}"
+            },
+            {
+              "name": "action",
+              "value": "create_deal"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f60e3531-ec1e-422b-ac53-5e2ddc6d9bcf",
+      "name": "POST — 送出銷售資料到 CRM",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -688,
+        768
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## L03：HTTP Request 實戰\n### 查台灣公開資料 + POST 到 CRM\n\n**學習目標：**\n1. GET = 「讀取」資料（免認證公開 API）\n2. POST = 「送出」資料（模擬寫入 CRM）\n3. Expression `{{ $json.xxx }}` 取上游資料\n\n**流程：**\n```\nManual Trigger\n  → Edit Fields（準備銷售資料）\n    ├→ GET 台幣匯率\n    ├→ GET 股價（stockNo + queryDate）\n    └→ POST 銷售資料到 httpbin\n```\n\n**TWSE GET 參數都從 Edit Fields 動態取值：**\n`stockNo`   = `{{ $json.stockNo }}`\n`date`      = `{{ $json.queryDate }}`\n→ 改 Edit Fields 一個地方，GET 就換股票/月份\n\n**動手試試（改 Edit Fields）：**\n- stockNo → 2317（鴻海）/ 2454（聯發科）/ 0050（台灣50 ETF）\n- queryDate → 20250201（2月）/ 20241201（去年12月）\n- customer → 改成對應公司名\n- 重新執行，三路結果同時變化\n\n**對應教材：** 06_API基礎概念.md 第 3、6 章",
+        "height": 640,
+        "width": 500,
+        "color": 4
+      },
+      "id": "8f8be4b0-059c-4909-90a9-f714500925c4",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -2128,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### Edit Fields\n準備銷售資料\n\n這筆資料被後面三個節點共用：\n- GET 用 stockNo + queryDate\n- POST 用全部欄位送 CRM\n\n**動手試試：**\nstockNo → 2317（鴻海）\nqueryDate → 20250201（2月）\n\n→ 改這裡，後面全跟著變",
+        "height": 300,
+        "width": 252,
+        "color": 5
+      },
+      "id": "cc5ff778-8641-4814-b3b8-c13a6cde732c",
+      "name": "Sticky Note0",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1232,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### GET — 讀取資料\n台幣匯率：tw.rter.info\n台積電股價：twse.com.tw\n\n**TWSE API 參數：**\nstockNo = 股票代號\ndate = 月份（yyyyMM01）\n\n兩個都從 Edit Fields 取：\n`{{ $json.stockNo }}`\n`{{ $json.queryDate }}`\n\n**常見股票代號：**\n2330 台積電 / 2317 鴻海\n2454 聯發科 / 2308 台達電\n0050 元大台灣50 ETF",
+        "height": 316,
+        "width": 224,
+        "color": 6
+      },
+      "id": "eca4aa29-585a-437a-8e3b-478190b3b9f6",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -752,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### POST — 送出資料\nhttpbin 是回音壁\n\n看 Output 的 `form` 欄位：\nsalesRep = 林志明\ncustomer = 台積電\namount = 1500000\n\n→ 確認上游資料有帶過來",
+        "height": 192,
+        "width": 192,
+        "color": 3
+      },
+      "id": "9de552b0-4a83-4385-8b27-01e49af95d84",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -720,
+        944
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### 台灣常用公開 API\n\n**免認證：**\n- tw.rter.info（匯率）\n- twse.com.tw（股市）\n- data.gov.tw（政府開放資料）\n\n**需 API Key：**\n- 中央氣象署（天氣）\n- 環境部（空氣品質）\n- 交通部 PTX（公車/高鐵）\n\n→ 需要 Key 的見 L07",
+        "height": 296,
+        "color": 2
+      },
+      "id": "4e04622c-924e-4c75-bb2a-840b05a74a2f",
+      "name": "Sticky Note3",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -416,
+        256
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields — 銷售資料",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields — 銷售資料": {
+      "main": [
+        [
+          {
+            "node": "GET — 台幣即時匯率",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "GET — 台積電月成交資訊",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "POST — 送出銷售資料到 CRM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "264ad157-efe6-422d-87c9-16eef912945c",
+  "meta": {
+    "instanceId": "5c382041e9e21f3536f4e542bc076d9d20bdb81ee8b1cce212b601f3a071f8be"
+  },
+  "id": "ncz6BYuaYFMyu2lQ",
+  "tags": []
+}

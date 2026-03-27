@@ -1,0 +1,179 @@
+{
+  "name": "L06 — 資料轉換（Set + Code + Summarize）",
+  "nodes": [
+    {
+      "parameters": {
+        "regionFilter": [
+          "北區"
+        ]
+      },
+      "id": "e653dd1a-1508-4612-9bbd-78050e4f1de1",
+      "name": "Fake Sales",
+      "type": "n8n-nodes-fake-sales.fakeSales",
+      "typeVersion": 1,
+      "position": [
+        512,
+        2576
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "weightedAmount",
+              "value": "={{ Math.round($json.amount * ($json.probability / 100)) }}",
+              "type": "number"
+            },
+            {
+              "id": "2",
+              "name": "commission",
+              "value": "={{ Math.round($json.amount * ($json.probability / 100) * 0.05) }}",
+              "type": "number"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "2a22deaf-5d58-42c3-bb27-8fe2b8f9754d",
+      "name": "Set — 計算加權與佣金",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        768,
+        2576
+      ]
+    },
+    {
+      "parameters": {
+        "language": "pythonNative",
+        "pythonCode": "# 1. 取代 _input.all()\nitems = _items\n\n# 2. 改用 .get(\"json\", {}) 來安全取得欄位數值，並給予預設值 0 避免加總報錯\ntotal_amount = sum(i.get(\"json\", {}).get(\"amount\", 0) for i in items)\ntotal_weighted = sum(i.get(\"json\", {}).get(\"weightedAmount\", 0) for i in items)\ntotal_commission = sum(i.get(\"json\", {}).get(\"commission\", 0) for i in items)\n\n# 依業務分組統計\nby_rep = {}\nfor i in items:\n    j = i.get(\"json\", {})\n    rep = j.get(\"salesRep\", \"Unknown\") # 如果沒填業務，歸類到 Unknown\n    \n    if rep not in by_rep:\n        by_rep[rep] = {'deals': 0, 'amount': 0}\n        \n    by_rep[rep]['deals'] += 1\n    by_rep[rep]['amount'] += j.get(\"amount\", 0)\n\n# 組報表\nrep_lines = [f\"{rep}：{d['deals']} 筆\" for rep, d in by_rep.items()]\ndetail_lines = [\n    f\"{i.get('json', {}).get('customer', 'Unknown')}  ${i.get('json', {}).get('amount', 0):,}  [{i.get('json', {}).get('stage', 'Unknown')}]\" \n    for i in items\n]\n\nreport = '\\n'.join([\n    '== Pipeline 報表 ==',\n    f'商機：{len(items)} 筆',\n    f'總額：${total_amount:,}',\n    f'加權：${total_weighted:,}',\n    f'佣金：${total_commission:,}',\n    '-- 業務 --',\n    *rep_lines,\n    '-- 明細 --',\n    *detail_lines\n])\n\nreturn [{\n    'json': {\n        'totalDeals': len(items),\n        'totalAmount': total_amount,\n        'totalWeighted': total_weighted,\n        'totalCommission': total_commission,\n        'report': report\n    }\n}]"
+      },
+      "id": "35096eb1-f69f-40af-8dc3-c6f1750302a5",
+      "name": "Code (Python) — 彙總報表",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1024,
+        2576
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## L06：資料轉換\n### Set（加欄位）→ Code Python（彙總）\n\n**學習目標：**\n1. Set 節點：用 Expression 新增計算欄位\n2. Code 節點：用 **Python** 做複雜彙總\n3. 觀察 output 數量變化：5 → 5 → 1\n\n**計算邏輯：**\n- 加權金額 = amount × probability%\n- 佣金 = 加權金額 × 5%\n\n**Python Code 重點語法：**\n- `_input.all()` 取得所有輸入資料\n- `i.json['欄位名']` 取值\n- 回傳 `[{'json': {...}}]`\n- f-string 格式化：`f'${total:,}'`\n\n**對應教材：** 06b_資料格式.md 第 2 章 JSON",
+        "height": 480,
+        "width": 500,
+        "color": 4
+      },
+      "id": "63e75920-c7ab-49f4-b297-cf56b0030761",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -16,
+        2416
+      ]
+    }
+  ],
+  "pinData": {
+    "Fake Sales": [
+      {
+        "json": {
+          "id": 1,
+          "salesRep": "林志明",
+          "region": "北區",
+          "customer": "鴻海精密工業",
+          "product": "企業雲端方案 Pro",
+          "amount": 640000,
+          "stage": "提案中",
+          "probability": 30
+        }
+      },
+      {
+        "json": {
+          "id": 3,
+          "salesRep": "陳建宏",
+          "region": "北區",
+          "customer": "國泰世華銀行",
+          "product": "AI 風控分析平台",
+          "amount": 980000,
+          "stage": "報價中",
+          "probability": 60
+        }
+      },
+      {
+        "json": {
+          "id": 5,
+          "salesRep": "張家豪",
+          "region": "北區",
+          "customer": "矽谷數位科技",
+          "product": "DevOps 自動化工具組",
+          "amount": 900000,
+          "stage": "成交",
+          "probability": 100
+        }
+      },
+      {
+        "json": {
+          "id": 6,
+          "salesRep": "林志明",
+          "region": "北區",
+          "customer": "台積電",
+          "product": "資安防護旗艦方案",
+          "amount": 1500000,
+          "stage": "提案中",
+          "probability": 25
+        }
+      },
+      {
+        "json": {
+          "id": 13,
+          "salesRep": "林志明",
+          "region": "北區",
+          "customer": "華碩電腦",
+          "product": "企業雲端方案 Pro",
+          "amount": 1280000,
+          "stage": "報價中",
+          "probability": 50
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Fake Sales": {
+      "main": [
+        [
+          {
+            "node": "Set — 計算加權與佣金",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set — 計算加權與佣金": {
+      "main": [
+        [
+          {
+            "node": "Code (Python) — 彙總報表",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "dff689bd-739c-494f-b011-02b4e2438755",
+  "meta": {
+    "instanceId": "5c382041e9e21f3536f4e542bc076d9d20bdb81ee8b1cce212b601f3a071f8be"
+  },
+  "id": "ncz6BYuaYFMyu2lQ",
+  "tags": []
+}

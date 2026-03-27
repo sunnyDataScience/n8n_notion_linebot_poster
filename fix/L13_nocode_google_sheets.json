@@ -1,0 +1,36 @@
+{
+  "name": "L13 — No-Code 報表（Summarize → Google Sheets）",
+  "nodes": [
+    {"parameters": {}, "id": "dddddddd-0001-0001-0001-000000000001", "name": "Manual Trigger", "type": "n8n-nodes-base.manualTrigger", "typeVersion": 1, "position": [200, 500]},
+    {"parameters": {"numberOfRecords": 50}, "id": "dddddddd-0001-0001-0001-000000000002", "name": "Fake Sales", "type": "n8n-nodes-fake-sales.fakeSales", "typeVersion": 1, "position": [440, 500]},
+    {"parameters": {"mode": "manual", "includeOtherFields": true, "assignments": {"assignments": [{"id": "1", "name": "weightedAmount", "value": "={{ Math.round($json.amount * $json.probability / 100) }}", "type": "number"}, {"id": "2", "name": "daysToClose", "value": "={{ Math.ceil((new Date($json.expectedCloseDate) - new Date()) / (1000*60*60*24)) }}", "type": "number"}, {"id": "3", "name": "riskLevel", "value": "={{ ($json.stage !== '成交' && new Date($json.expectedCloseDate) < new Date()) ? '高' : ($json.amount > 1000000 && $json.probability < 40) ? '高' : ($json.amount > 500000 && $json.probability < 55) ? '中' : '低' }}", "type": "string"}]}}, "id": "dddddddd-0001-0001-0001-000000000003", "name": "Edit Fields — 加權+風險", "type": "n8n-nodes-base.set", "typeVersion": 3.4, "position": [680, 500]},
+    {"parameters": {"fieldsToSummarize": {"values": [{"field": "id", "aggregation": "count", "includeNonNumerics": true, "renameTo": "dealCount"}, {"field": "amount", "aggregation": "sum", "renameTo": "totalAmount"}, {"field": "weightedAmount", "aggregation": "sum", "renameTo": "totalWeightedAmount"}, {"field": "amount", "aggregation": "average", "renameTo": "avgDealSize"}]}, "options": {"outputFormat": "separateItems"}, "fieldsToGroupBy": {"values": [{"fieldName": "salesRep"}, {"fieldName": "department"}]}}, "id": "dddddddd-0001-0001-0001-000000000004", "name": "Summarize — 業務績效", "type": "n8n-nodes-base.summarize", "typeVersion": 1.1, "position": [960, 360]},
+    {"parameters": {"fieldsToSummarize": {"values": [{"field": "id", "aggregation": "count", "includeNonNumerics": true, "renameTo": "dealCount"}, {"field": "amount", "aggregation": "sum", "renameTo": "totalAmount"}, {"field": "weightedAmount", "aggregation": "sum", "renameTo": "totalWeightedAmount"}]}, "options": {"outputFormat": "separateItems"}, "fieldsToGroupBy": {"values": [{"fieldName": "region"}]}}, "id": "dddddddd-0001-0001-0001-000000000005", "name": "Summarize — 區域", "type": "n8n-nodes-base.summarize", "typeVersion": 1.1, "position": [960, 560]},
+    {"parameters": {"fieldsToSummarize": {"values": [{"field": "id", "aggregation": "count", "includeNonNumerics": true, "renameTo": "dealCount"}, {"field": "amount", "aggregation": "sum", "renameTo": "totalAmount"}, {"field": "weightedAmount", "aggregation": "sum", "renameTo": "totalWeightedAmount"}]}, "options": {"outputFormat": "separateItems"}, "fieldsToGroupBy": {"values": [{"fieldName": "stage"}]}}, "id": "dddddddd-0001-0001-0001-000000000006", "name": "Summarize — 漏斗", "type": "n8n-nodes-base.summarize", "typeVersion": 1.1, "position": [960, 760]},
+    {"parameters": {"operation": "append", "documentId": "YOUR_GOOGLE_SHEET_ID", "sheetName": "Rep_Summary"}, "id": "dddddddd-0001-0001-0001-000000000007", "name": "Sheets — Rep", "type": "n8n-nodes-base.googleSheets", "typeVersion": 4, "position": [1240, 360]},
+    {"parameters": {"operation": "append", "documentId": "YOUR_GOOGLE_SHEET_ID", "sheetName": "Region_Summary"}, "id": "dddddddd-0001-0001-0001-000000000008", "name": "Sheets — Region", "type": "n8n-nodes-base.googleSheets", "typeVersion": 4, "position": [1240, 560]},
+    {"parameters": {"operation": "append", "documentId": "YOUR_GOOGLE_SHEET_ID", "sheetName": "Stage_Funnel"}, "id": "dddddddd-0001-0001-0001-000000000009", "name": "Sheets — Stage", "type": "n8n-nodes-base.googleSheets", "typeVersion": 4, "position": [1240, 760]},
+    {"parameters": {"content": "## L13：No-Code 報表\n### 不寫 JS，用 Summarize 做樞紐分析\n\n**學習目標：**\n1. Summarize 節點 = Excel 樞紐分析\n2. 直接輸出到 Google Sheets\n3. 完全不寫 JavaScript\n\n**對比 L12：**\n- L12 用 Code 節點做彙總（更靈活）\n- L13 用 Summarize 節點做彙總（更簡單）\n- 同樣的結果，不同的方法\n\n**使用前：**\n1. 建立 Google Sheets OAuth Credential\n2. 替換 YOUR_GOOGLE_SHEET_ID\n3. Sheet 內建好對應的工作表\n\n**對應教材：** 06b_資料格式.md + 06_API概念.md 第 5 章 Credential", "height": 480, "width": 540, "color": 4}, "id": "dddddddd-0001-0001-0001-000000000010", "name": "Sticky Note", "type": "n8n-nodes-base.stickyNote", "typeVersion": 1, "position": [80, -180]}
+  ],
+  "connections": {
+    "Manual Trigger": {"main": [[{"node": "Fake Sales", "type": "main", "index": 0}]]},
+    "Fake Sales": {"main": [[{"node": "Edit Fields — 加權+風險", "type": "main", "index": 0}]]},
+    "Edit Fields — 加權+風險": {"main": [[{"node": "Summarize — 業務績效", "type": "main", "index": 0}, {"node": "Summarize — 區域", "type": "main", "index": 0}, {"node": "Summarize — 漏斗", "type": "main", "index": 0}]]},
+    "Summarize — 業務績效": {"main": [[{"node": "Sheets — Rep", "type": "main", "index": 0}]]},
+    "Summarize — 區域": {"main": [[{"node": "Sheets — Region", "type": "main", "index": 0}]]},
+    "Summarize — 漏斗": {"main": [[{"node": "Sheets — Stage", "type": "main", "index": 0}]]}
+  },
+  "pinData": {
+    "Fake Sales": [
+      {"json": {"id": 1, "salesRep": "林志明", "department": "企業方案部", "region": "北區", "customer": "鴻海精密工業", "category": "雲端服務", "amount": 640000, "stage": "提案中", "probability": 30, "quantity": 5, "expectedCloseDate": "2025-04-30"}},
+      {"json": {"id": 3, "salesRep": "陳建宏", "department": "金融事業部", "region": "北區", "customer": "國泰世華銀行", "category": "AI 解決方案", "amount": 980000, "stage": "報價中", "probability": 60, "quantity": 1, "expectedCloseDate": "2025-05-20"}},
+      {"json": {"id": 5, "salesRep": "張家豪", "department": "中小企業部", "region": "北區", "customer": "矽谷數位科技", "category": "開發工具", "amount": 900000, "stage": "成交", "probability": 100, "quantity": 20, "expectedCloseDate": "2025-02-28"}},
+      {"json": {"id": 9, "salesRep": "黃淑芬", "department": "企業方案部", "region": "南區", "customer": "長榮海運", "category": "IoT 方案", "amount": 1260000, "stage": "合約審核", "probability": 75, "quantity": 3, "expectedCloseDate": "2025-04-15"}},
+      {"json": {"id": 20, "salesRep": "林志明", "department": "企業方案部", "region": "北區", "customer": "聯發科技", "category": "雲端服務", "amount": 3200000, "stage": "報價中", "probability": 45, "quantity": 1, "expectedCloseDate": "2025-06-30"}}
+    ]
+  },
+  "active": false,
+  "settings": {"executionOrder": "v1"},
+  "meta": {"templateCredsSetupCompleted": true},
+  "tags": []
+}

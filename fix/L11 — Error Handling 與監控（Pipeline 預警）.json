@@ -1,0 +1,293 @@
+{
+  "name": "L11 — Error Handling 與監控（Pipeline 預警）",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "45e9f7da-ec64-4c67-845a-aba13ba55dc0",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        480,
+        1280
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 取得第一筆資料的 JSON 內容\nconst j = $input.first().json || {};\nconst wf = j.workflow || {};\nconst exec_data = j.execution || {};\nconst err = exec_data.error || {};\n\nreturn [{\n    json: {\n        type: 'ERROR',\n        workflow: wf.name || 'unknown',\n        message: err.message || 'unknown',\n        executionId: String(exec_data.id || ''),\n        timestamp: new Date().toISOString(), // JS 原生語法，不需 import 任何模組\n        severity: 'HIGH'\n    }\n}];"
+      },
+      "id": "4edeab57-8c7d-4102-a818-c10bc6d9aecf",
+      "name": "Code (Python) — 萃取錯誤",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        752,
+        1280
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "action",
+              "value": "通知主管 + 寫入錯誤日誌",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "notifyChannel",
+              "value": "#sales-alerts",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "45312898-eb4c-493a-acdc-280ad7f826e0",
+      "name": "Set — 格式化異常",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1024,
+        1280
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "b1ca1ddb-3829-4855-89c9-87669056c7ad",
+      "name": "Fake Sales",
+      "type": "n8n-nodes-fake-sales.fakeSales",
+      "typeVersion": 1,
+      "position": [
+        480,
+        1504
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 取得今天的日期並將時間歸零（為了準確計算天數差）\nconst today = new Date();\ntoday.setHours(0, 0, 0, 0);\n\nconst results = [];\n\n// JS 環境中可以使用 $input.all()\nfor (const i of $input.all()) {\n    // 複製原本的 json 字典\n    const deal = { ...(i.json || {}) };\n    const close_str = deal.expectedCloseDate || '';\n    let days_remaining = 999;\n\n    // 解析日期並計算天數差\n    if (close_str) {\n        const close_date = new Date(close_str);\n        if (!isNaN(close_date.getTime())) {\n            close_date.setHours(0, 0, 0, 0);\n            const diffTime = close_date - today;\n            // 將毫秒轉換為天數\n            days_remaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));\n        }\n    }\n\n    const is_overdue = days_remaining < 0;\n    const status = is_overdue ? 'OVERDUE' : (days_remaining <= 14 ? 'URGENT' : 'ON_TRACK');\n\n    // 將計算結果更新回 deal 物件中\n    Object.assign(deal, {\n        daysRemaining: days_remaining,\n        isOverdue: is_overdue,\n        status: status,\n        alertNeeded: is_overdue || days_remaining <= 14,\n        timestamp: new Date().toISOString()\n    });\n\n    results.push({ json: deal });\n}\n\nreturn results;"
+      },
+      "id": "e38db5ce-646a-43d1-8f41-2632f940686c",
+      "name": "Code (Python) — 到期天數",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        752,
+        1504
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "leftValue": "={{ $json.alertNeeded }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and",
+          "options": {
+            "version": 1,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          }
+        },
+        "options": {}
+      },
+      "id": "7785df2d-322c-4518-ad20-fa8525b9669c",
+      "name": "IF — 需要警報？",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1024,
+        1504
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "alertAction",
+              "value": "=緊急：{{ $json.customer }} {{ $json.isOverdue ? '已逾期' : '即將到期' }}！",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "1060e821-0228-4561-b377-ddc1d9e5e68c",
+      "name": "發送警報",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1280,
+        1424
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "alertAction",
+              "value": "正常追蹤",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "f3449c5c-b2f1-4767-87d0-3c6edf2c4354",
+      "name": "正常記錄",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1280,
+        1584
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## L11：Error Handling 與監控\n### Workflow 出錯怎麼辦？商機逾期怎麼追？\n\n**學習目標：**\n1. Error Trigger：自動攔截其他 Workflow 的錯誤\n2. 用 Code 節點做 SLA 監控（到期天數計算）\n3. IF 節點做警報分流\n\n**兩條路徑：**\n- 上方：Error Monitor（其他 workflow 出錯時觸發）\n- 下方：Deal SLA（監控商機是否逾期）\n\n**動手試試：**\n改 pinData 的 expectedCloseDate\n- 過去日期 → OVERDUE\n- 14 天內 → URGENT\n- 14 天以上 → ON_TRACK",
+        "height": 440,
+        "width": 540,
+        "color": 4
+      },
+      "id": "94be5ec3-8057-452d-b944-2120267bea84",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -112,
+        1232
+      ]
+    }
+  ],
+  "pinData": {
+    "Error Trigger": [
+      {
+        "json": {
+          "workflow": {
+            "id": "456",
+            "name": "CRM 同步"
+          },
+          "execution": {
+            "id": "789",
+            "error": {
+              "message": "CRM API 403 Forbidden，Token 已過期"
+            }
+          },
+          "_hint": "模擬錯誤事件"
+        }
+      }
+    ],
+    "Fake Sales": [
+      {
+        "json": {
+          "id": 4,
+          "salesRep": "黃淑芬",
+          "region": "南區",
+          "customer": "統一企業",
+          "product": "全通路行銷平台",
+          "amount": 816000,
+          "stage": "合約審核",
+          "probability": 80,
+          "expectedCloseDate": "2025-03-31"
+        }
+      },
+      {
+        "json": {
+          "id": 20,
+          "salesRep": "林志明",
+          "region": "北區",
+          "customer": "聯發科技",
+          "product": "高效能運算叢集",
+          "amount": 3200000,
+          "stage": "報價中",
+          "probability": 45,
+          "expectedCloseDate": "2025-06-30"
+        }
+      },
+      {
+        "json": {
+          "id": 47,
+          "salesRep": "張家豪",
+          "region": "北區",
+          "customer": "Line Taiwan",
+          "product": "負載平衡解決方案",
+          "amount": 1000000,
+          "stage": "合約審核",
+          "probability": 85,
+          "expectedCloseDate": "2025-03-31"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code (Python) — 萃取錯誤",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fake Sales": {
+      "main": [
+        [
+          {
+            "node": "Code (Python) — 到期天數",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF — 需要警報？": {
+      "main": [
+        [
+          {
+            "node": "發送警報",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "正常記錄",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "fe3f05fa-57cb-4ae3-8844-3a8c2bd3b03c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5c382041e9e21f3536f4e542bc076d9d20bdb81ee8b1cce212b601f3a071f8be"
+  },
+  "id": "ncz6BYuaYFMyu2lQ",
+  "tags": []
+}
